@@ -17,54 +17,110 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     private var settingsWindow: NSWindow?
     let screenshotService = ScreenCaptureService()
 
+    private var menuBarObserver: NSObjectProtocol?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        UserDefaults.standard.register(defaults: ["dismissDelay": 5.0, "playSound": true, "showMenuBarIcon": true])
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 
         if let button = statusItem.button {
-            button.image = NSImage(systemSymbolName: "camera.viewfinder", accessibilityDescription: "Screenshot")
+            if let iconPath = Bundle.main.path(forResource: "menubar-icon", ofType: "png"),
+               let icon = NSImage(contentsOfFile: iconPath) {
+                icon.isTemplate = true
+                icon.size = NSSize(width: 18, height: 18)
+                button.image = icon
+            } else {
+                button.image = NSImage(systemSymbolName: "camera.viewfinder", accessibilityDescription: "Screenshot")
+            }
             button.target = self
             button.action = #selector(statusItemClicked(_:))
-            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+            button.sendAction(on: [.leftMouseUp])
         }
 
-        HotkeyManager.shared.onTrigger = { [weak self] in
-            self?.takeScreenshot()
+        let mgr = HotkeyManager.shared
+        mgr.onFullscreen = { [weak self] in
+            self?.takeFullscreen()
         }
-        HotkeyManager.shared.registerHotkey()
+        mgr.onArea = { [weak self] in
+            self?.takeArea()
+        }
+        mgr.onOCR = { [weak self] in
+            self?.takeOCR()
+        }
+        mgr.registerHotkey(.fullscreen)
+        mgr.registerHotkey(.area)
+        mgr.registerHotkey(.ocr)
+
+        // If menu bar icon is hidden, open settings on launch so user isn't locked out
+        if !UserDefaults.standard.bool(forKey: "showMenuBarIcon") {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                self?.openSettings()
+            }
+        }
+
+        // Watch for menu bar icon visibility changes
+        menuBarObserver = NotificationCenter.default.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.updateMenuBarVisibility()
+            }
+        }
+        updateMenuBarVisibility()
+    }
+
+    private func updateMenuBarVisibility() {
+        let show = UserDefaults.standard.bool(forKey: "showMenuBarIcon")
+        statusItem.isVisible = show
     }
 
     @objc private func statusItemClicked(_ sender: NSStatusBarButton) {
-        guard let event = NSApp.currentEvent else { return }
-
-        if event.type == .rightMouseUp {
-            showContextMenu()
-        } else {
-            takeScreenshot()
-        }
+        showMenu()
     }
 
-    private func takeScreenshot() {
-        Task {
-            await screenshotService.captureFullScreen()
-        }
+    private func takeFullscreen() {
+        Task { await screenshotService.captureFullScreen() }
     }
 
-    private func showContextMenu() {
+    private func takeArea() {
+        Task { await screenshotService.captureArea() }
+    }
+
+    private func takeOCR() {
+        Task { await screenshotService.captureOCR() }
+    }
+
+    private func showMenu() {
         let menu = NSMenu()
+        let mgr = HotkeyManager.shared
 
-        let captureItem = NSMenuItem(title: "Capturer l'ecran", action: #selector(captureAction), keyEquivalent: "")
-        captureItem.target = self
-        menu.addItem(captureItem)
+        let fullscreenItem = NSMenuItem(title: L10n.menuCapture, action: #selector(captureFullscreenAction), keyEquivalent: "")
+        fullscreenItem.target = self
+        if let combo = mgr.fullscreenHotkey { applyKeyEquivalent(combo, to: fullscreenItem) }
+        menu.addItem(fullscreenItem)
+
+        let areaItem = NSMenuItem(title: L10n.lang == "en" ? "Capture area" : "Capturer une zone", action: #selector(captureAreaAction), keyEquivalent: "")
+        areaItem.target = self
+        if let combo = mgr.areaHotkey { applyKeyEquivalent(combo, to: areaItem) }
+        menu.addItem(areaItem)
+
+        let ocrItem = NSMenuItem(title: L10n.lang == "en" ? "OCR (text capture)" : "OCR (capture texte)", action: #selector(captureOCRAction), keyEquivalent: "")
+        ocrItem.target = self
+        if let combo = mgr.ocrHotkey { applyKeyEquivalent(combo, to: ocrItem) }
+        menu.addItem(ocrItem)
 
         menu.addItem(NSMenuItem.separator())
 
-        let settingsItem = NSMenuItem(title: "Reglages...", action: #selector(openSettings), keyEquivalent: ",")
+        let settingsItem = NSMenuItem(title: L10n.menuSettings, action: #selector(openSettings), keyEquivalent: "")
         settingsItem.target = self
+        settingsItem.image = NSImage(systemSymbolName: "gearshape", accessibilityDescription: nil)
         menu.addItem(settingsItem)
 
         menu.addItem(NSMenuItem.separator())
 
-        let quitItem = NSMenuItem(title: "Quitter", action: #selector(quitApp), keyEquivalent: "q")
+        let quitItem = NSMenuItem(title: L10n.menuQuit, action: #selector(quitApp), keyEquivalent: "q")
         quitItem.target = self
         menu.addItem(quitItem)
 
@@ -73,9 +129,21 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         statusItem.menu = nil
     }
 
-    @objc private func captureAction() {
-        takeScreenshot()
+    private func applyKeyEquivalent(_ combo: HotkeyCombo, to item: NSMenuItem) {
+        let char = combo.keyCharacter
+        guard !char.isEmpty else { return }
+        item.keyEquivalent = char
+        var mods: NSEvent.ModifierFlags = []
+        if combo.modifiers.contains(.command) { mods.insert(.command) }
+        if combo.modifiers.contains(.option) { mods.insert(.option) }
+        if combo.modifiers.contains(.control) { mods.insert(.control) }
+        if combo.modifiers.contains(.shift) { mods.insert(.shift) }
+        item.keyEquivalentModifierMask = mods
     }
+
+    @objc private func captureFullscreenAction() { takeFullscreen() }
+    @objc private func captureAreaAction() { takeArea() }
+    @objc private func captureOCRAction() { takeOCR() }
 
     @objc func openSettings() {
         if let window = settingsWindow, window.isVisible {
@@ -88,12 +156,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         let hostingView = NSHostingView(rootView: settingsView)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 360, height: 200),
+            contentRect: NSRect(x: 0, y: 0, width: 380, height: 200),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
-        window.title = "Reglages"
+        window.title = L10n.menuSettings
         window.contentView = hostingView
         window.center()
         window.isReleasedWhenClosed = false

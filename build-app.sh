@@ -17,6 +17,14 @@ mkdir -p "$APP_BUNDLE/Contents/Resources"
 # Copy binary
 cp .build/release/ScreenshotMini "$APP_BUNDLE/Contents/MacOS/ScreenshotMini"
 
+# Copy icons
+if [ -f "Resources/AppIcon.icns" ]; then
+    cp Resources/AppIcon.icns "$APP_BUNDLE/Contents/Resources/AppIcon.icns"
+fi
+if [ -f "Resources/menubar-icon.png" ]; then
+    cp Resources/menubar-icon.png "$APP_BUNDLE/Contents/Resources/menubar-icon.png"
+fi
+
 # Create Info.plist
 cat > "$APP_BUNDLE/Contents/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -37,36 +45,36 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << 'PLIST'
     <string>APPL</string>
     <key>CFBundleExecutable</key>
     <string>ScreenshotMini</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>LSUIElement</key>
     <true/>
     <key>LSMinimumSystemVersion</key>
-    <string>26.0</string>
-    <key>NSScreenCaptureUsageDescription</key>
-    <string>Screenshot Mini needs screen recording permission to capture screenshots.</string>
+    <string>15.0</string>
 </dict>
 </plist>
 PLIST
 
-# Create entitlements (needed for ScreenCaptureKit)
-cat > "$BUILD_DIR/entitlements.plist" << 'ENTITLEMENTS'
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-    <key>com.apple.security.app-sandbox</key>
-    <false/>
-</dict>
-</plist>
-ENTITLEMENTS
+# Sign with stable dev certificate (preserves TCC permissions across rebuilds)
+codesign --force --deep -s "ScreenshotMini Dev" "$APP_BUNDLE"
 
-# Ad-hoc code sign with entitlements
-codesign --force --deep --entitlements "$BUILD_DIR/entitlements.plist" -s - "$APP_BUNDLE" 2>/dev/null || true
-
-echo ""
-echo "App bundle created at: $APP_BUNDLE"
-echo ""
-echo "To install:"
-echo "  cp -R \"$APP_BUNDLE\" /Applications/"
-echo ""
-echo "To run directly:"
-echo "  open \"$APP_BUNDLE\""
+INSTALLED="/Applications/$APP_NAME.app"
+if [ -d "$INSTALLED" ]; then
+    echo "Updating installed app..."
+    pkill -f "$APP_NAME" 2>/dev/null || true
+    sleep 0.5
+    # Copy and re-sign with same stable certificate to preserve TCC permissions
+    cp "$APP_BUNDLE/Contents/MacOS/ScreenshotMini" "$INSTALLED/Contents/MacOS/ScreenshotMini"
+    cp "$APP_BUNDLE/Contents/Info.plist" "$INSTALLED/Contents/Info.plist"
+    codesign --force --deep -s "ScreenshotMini Dev" "$INSTALLED"
+    xattr -cr "$INSTALLED" 2>/dev/null || true
+    echo "Updated. Relaunching..."
+    open "$INSTALLED"
+else
+    echo ""
+    echo "First install: copying to /Applications..."
+    cp -R "$APP_BUNDLE" /Applications/
+    xattr -cr "$INSTALLED" 2>/dev/null || true
+    echo "Installed. Launching..."
+    open "$INSTALLED"
+fi

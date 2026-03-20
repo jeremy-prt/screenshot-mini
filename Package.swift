@@ -5,7 +5,7 @@ import PackageDescription
 let package = Package(
     name: "ScreenshotMini",
     platforms: [
-        .macOS(.v26)
+        .macOS(.v15)
     ],
     targets: [
         .executableTarget(

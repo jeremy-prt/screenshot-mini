@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup - Screenshot Mini</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+            background: #f6e7fd;
+            color: #1a1a1a;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 640px;
+            margin: 0 auto;
+        }
+
+        .lang-toggle {
+            position: fixed;
+            top: 16px;
+            right: 20px;
+            display: flex;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            font-size: 0.82rem;
+            font-weight: 500;
+            z-index: 10;
+        }
+        .lang-toggle button {
+            border: none;
+            background: transparent;
+            padding: 6px 14px;
+            cursor: pointer;
+            color: #888;
+            font-family: inherit;
+            font-size: inherit;
+            font-weight: inherit;
+            transition: all 0.15s;
+        }
+        .lang-toggle button.active {
+            background: #9F01A0;
+            color: white;
+        }
+
+        .back {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #9F01A0;
+            text-decoration: none;
+            font-weight: 500;
+            margin-bottom: 32px;
+        }
+        .back:hover { text-decoration: underline; }
+
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 32px;
+            letter-spacing: -0.02em;
+        }
+
+        .step {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+
+        .step-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: #9F01A0;
+            color: white;
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 12px;
+        }
+
+        .step h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .step p {
+            color: #555;
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .step .hint {
+            margin-top: 8px;
+            color: #888;
+            font-size: 0.88rem;
+        }
+
+        code {
+            background: #f0eeeb;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 0.88rem;
+            font-family: 'SF Mono', 'Menlo', monospace;
+        }
+
+        .code-block {
+            background: #1a1a1a;
+            color: #e0e0e0;
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-top: 12px;
+            font-family: 'SF Mono', 'Menlo', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            overflow-x: auto;
+        }
+
+        .note {
+            background: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            padding: 16px;
+            margin-top: 24px;
+            font-size: 0.9rem;
+            color: #6b21a8;
+            line-height: 1.5;
+        }
+
+        .note strong { color: #9F01A0; }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+        .footer a { color: #888; text-decoration: none; }
+        .footer a:hover { color: #9F01A0; }
+    </style>
+</head>
+<body>
+    <div class="lang-toggle">
+        <button id="btn-fr" onclick="setLang('fr')">FR</button>
+        <button id="btn-en" class="active" onclick="setLang('en')">EN</button>
+    </div>
+
+    <div class="container">
+        <a href="index.html" class="back" data-fr="&larr; Retour" data-en="&larr; Back"></a>
+
+        <h1 data-fr="Guide d'installation" data-en="Setup Guide"></h1>
+
+        <div class="step">
+            <div class="step-number">1</div>
+            <h2 data-fr="Télécharger et installer" data-en="Download & Install"></h2>
+            <p data-fr="Téléchargez le DMG, ouvrez-le et glissez <strong>Screenshot Mini</strong> dans votre dossier <code>Applications</code>." data-en="Download the DMG, open it, and drag <strong>Screenshot Mini</strong> into your <code>Applications</code> folder."></p>
+        </div>
+
+        <div class="step">
+            <div class="step-number">2</div>
+            <h2 data-fr="Autoriser l'app" data-en="Allow the app"></h2>
+            <p data-fr="Au premier lancement, macOS bloque l'app car elle n'est pas signée par Apple. Pour l'autoriser :" data-en="On first launch, macOS blocks the app because it's not signed by Apple. To allow it:"></p>
+            <p style="margin-top: 10px;" data-fr="1. Double-cliquez sur l'app — macOS affiche un avertissement<br>2. Ouvrez <strong>Réglages Système → Confidentialité et sécurité</strong><br>3. En bas, cliquez <strong>Ouvrir quand même</strong> à côté du nom de l'app<br>4. Entrez votre mot de passe" data-en="1. Double-click the app — macOS shows a warning<br>2. Open <strong>System Settings → Privacy & Security</strong><br>3. At the bottom, click <strong>Open Anyway</strong> next to the app name<br>4. Enter your password"></p>
+            <img src="open-anyway.webp" alt="Open Anyway" style="width: 100%; border-radius: 8px; margin-top: 12px; border: 1px solid #eee;">
+            <p class="hint" data-fr="C'est nécessaire une seule fois. Ensuite l'app s'ouvre normalement." data-en="This is only needed once. After that the app opens normally."></p>
+            <p class="hint" data-fr="<em>Ce projet est open source, développé par un développeur indépendant. La certification Apple Developer coûte 99$/an, c'est pourquoi l'app n'est pas signée. Le code source est entièrement consultable.</em>" data-en="<em>This is an open-source project by an independent developer. Apple Developer certification costs $99/year, which is why the app isn't signed. The source code is fully available for review.</em>"></p>
+            <p class="hint" data-fr="<strong>Alternative Terminal :</strong> <code>xattr -cr /Applications/Screenshot\ Mini.app</code>" data-en="<strong>Terminal alternative:</strong> <code>xattr -cr /Applications/Screenshot\ Mini.app</code>"></p>
+        </div>
+
+        <div class="step">
+            <div class="step-number">3</div>
+            <h2 data-fr="Autoriser l'enregistrement d'écran" data-en="Grant Screen Recording permission"></h2>
+            <p data-fr="Au premier screenshot, macOS demandera l'autorisation d'enregistrement d'écran. Acceptez, puis relancez l'app si nécessaire." data-en="On first screenshot, macOS will ask for Screen Recording permission. Accept, then relaunch the app if needed."></p>
+            <p class="hint" data-fr="Cette autorisation est nécessaire pour que <code>screencapture</code> fonctionne." data-en="This permission is required for <code>screencapture</code> to work."></p>
+        </div>
+
+        <div class="step">
+            <div class="step-number">4</div>
+            <h2 data-fr="Configurer vos raccourcis" data-en="Set up your shortcuts"></h2>
+            <p data-fr="Cliquez sur l'icône dans la barre de menu → <strong>Réglages → Raccourcis</strong>. Définissez vos raccourcis pour la capture plein écran, zone et OCR." data-en="Click the menu bar icon → <strong>Settings → Shortcuts</strong>. Set your hotkeys for full screen, area, and OCR capture."></p>
+        </div>
+
+        <div class="step">
+            <div class="step-number">5</div>
+            <h2 data-fr="C'est prêt !" data-en="You're set!"></h2>
+            <p data-fr="Utilisez vos raccourcis pour capturer. La preview apparaît en bas à gauche avec les options Copy, Edit et Save." data-en="Use your shortcuts to capture. The preview appears in the bottom-left with Copy, Edit, and Save options."></p>
+        </div>
+
+        <div class="note">
+            <strong data-fr="Compiler depuis les sources" data-en="Build from source"></strong><br>
+            <span data-fr="Si vous préférez le compiler vous-même :" data-en="If you prefer to build it yourself:"></span>
+            <div class="code-block">
+git clone https://github.com/jeremy-prt/screenshot-mini.git
+cd screenshot-mini
+bash build-app.sh</div>
+            <p style="margin-top: 8px;" data-fr="Nécessite macOS 26+ et Xcode 26+ (Swift 6.2)." data-en="Requires macOS 26+ and Xcode 26+ (Swift 6.2)."></p>
+        </div>
+
+        <div class="footer">
+            <a href="index.html">Screenshot Mini</a> &middot; <a href="https://github.com/jeremy-prt/screenshot-mini">GitHub</a>
+        </div>
+    </div>
+
+    <script>
+        function setLang(lang) {
+            document.querySelectorAll('[data-fr]').forEach(el => {
+                el.innerHTML = el.getAttribute('data-' + lang);
+            });
+            document.getElementById('btn-fr').classList.toggle('active', lang === 'fr');
+            document.getElementById('btn-en').classList.toggle('active', lang === 'en');
+            document.documentElement.lang = lang;
+            localStorage.setItem('lang', lang);
+        }
+
+        const saved = localStorage.getItem('lang');
+        const browserLang = navigator.language.startsWith('fr') ? 'fr' : 'en';
+        setLang(saved || browserLang);
+    </script>
+</body>
+</html>
