@@ -14,7 +14,10 @@ struct ToolbarButton: View {
     @State private var hoverTask: Task<Void, Never>?
 
     var body: some View {
-        Button(action: action) {
+        Button(action: {
+            showTooltip = false
+            action()
+        }) {
             Image(systemName: icon)
                 .font(.system(size: 14))
                 .frame(width: 30, height: 28)
@@ -38,14 +41,25 @@ struct ToolbarButton: View {
                 showTooltip = false
             }
         }
-        .popover(isPresented: $showTooltip, arrowEdge: .bottom) {
-            HStack(spacing: 4) {
-                Text(label).font(.system(size: 11, weight: .medium))
-                Text("(\(shortcut))")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
+        .overlay(alignment: .bottom) {
+            if showTooltip {
+                HStack(spacing: 4) {
+                    Text(label).font(.system(size: 11, weight: .medium))
+                    Text("(\(shortcut))")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.horizontal, 8).padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color(nsColor: .windowBackgroundColor))
+                        .shadow(color: .black.opacity(0.15), radius: 4, y: 2)
+                )
+                .offset(y: 32)
+                .fixedSize()
+                .allowsHitTesting(false)
             }
-            .padding(.horizontal, 8).padding(.vertical, 4)
         }
+        .zIndex(showTooltip ? 100 : 0)
     }
 }
