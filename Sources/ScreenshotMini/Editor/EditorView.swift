@@ -354,7 +354,6 @@ struct EditorView: View {
                 history.save()
                 history.annotations.append(ann)
                 selectedId = ann.id
-                selectedTool = nil
             }
         case .freehand(let pts):
             if pts.count >= 3 {
@@ -367,7 +366,6 @@ struct EditorView: View {
                 history.save()
                 history.annotations.append(ann)
                 selectedId = ann.id
-                selectedTool = nil
             }
         case .moving, .resizing:
             break
