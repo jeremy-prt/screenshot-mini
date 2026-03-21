@@ -71,15 +71,108 @@ func flattenAnnotations(_ annotations: [Annotation], onto image: NSImage, canvas
         case .line:
             path.move(to: s); path.line(to: e); path.stroke()
         case .arrow:
-            path.move(to: s); path.line(to: e); path.stroke()
-            let angle = atan2(e.y - s.y, e.x - s.x)
-            let hl: CGFloat = 15 * sx, ha: CGFloat = .pi / 6
-            let ap = NSBezierPath(); ap.lineWidth = ann.lineWidth * sx
-            ap.move(to: e)
-            ap.line(to: NSPoint(x: e.x - hl * cos(angle - ha), y: e.y - hl * sin(angle - ha)))
-            ap.move(to: e)
-            ap.line(to: NSPoint(x: e.x - hl * cos(angle + ha), y: e.y - hl * sin(angle + ha)))
-            ap.stroke()
+            let cp: NSPoint? = ann.controlPoint.map { NSPoint(x: $0.x * sx, y: (canvasSize.height - $0.y) * sy) }
+            let angle: CGFloat
+            if let cp = cp {
+                angle = atan2(e.y - cp.y, e.x - cp.x)
+            } else {
+                angle = atan2(e.y - s.y, e.x - s.x)
+            }
+            let lw = ann.lineWidth * sx
+
+            switch ann.arrowStyle {
+            case .thin:
+                path.lineWidth = lw
+                path.move(to: s)
+                if let cp = cp { path.curve(to: e, controlPoint1: cp, controlPoint2: cp) } else { path.line(to: e) }
+                path.stroke()
+                let hl: CGFloat = 15 * sx, ha: CGFloat = .pi / 6
+                let ap = NSBezierPath(); ap.lineWidth = lw
+                ap.move(to: e)
+                ap.line(to: NSPoint(x: e.x - hl * cos(angle - ha), y: e.y - hl * sin(angle - ha)))
+                ap.move(to: e)
+                ap.line(to: NSPoint(x: e.x - hl * cos(angle + ha), y: e.y - hl * sin(angle + ha)))
+                ap.stroke()
+
+            case .outline:
+                let hl: CGFloat = 20 * sx, ha: CGFloat = .pi / 6
+                let tip = e
+                let left = NSPoint(x: e.x - hl * cos(angle - ha), y: e.y - hl * sin(angle - ha))
+                let right = NSPoint(x: e.x - hl * cos(angle + ha), y: e.y - hl * sin(angle + ha))
+                let baseCenter = NSPoint(x: (left.x + right.x) / 2, y: (left.y + right.y) / 2)
+                // Shaft
+                let sp = NSBezierPath(); sp.lineWidth = lw
+                sp.move(to: s)
+                if let cp = cp { sp.curve(to: baseCenter, controlPoint1: cp, controlPoint2: cp) } else { sp.line(to: baseCenter) }
+                sp.stroke()
+                // Arrowhead triangle (stroked)
+                let hp = NSBezierPath(); hp.lineWidth = lw
+                hp.move(to: tip); hp.line(to: left); hp.line(to: right); hp.close()
+                hp.stroke()
+
+            case .filled:
+                let shaftWidth = lw * 3
+                let headLength = max(shaftWidth * 3, 30 * sx)
+                let headWidth = max(shaftWidth * 2.5, 25 * sx)
+
+                if let cp = cp {
+                    let totalLength = hypot(e.x - s.x, e.y - s.y)
+                    guard totalLength > 1 else { break }
+                    let headRatio = min(headLength / totalLength, 0.5)
+                    let shaftEndT = max(0, 1.0 - headRatio)
+                    let steps = 12
+
+                    func bezPt(_ t: CGFloat) -> NSPoint {
+                        let omt = 1 - t
+                        return NSPoint(x: omt * omt * s.x + 2 * omt * t * cp.x + t * t * e.x,
+                                       y: omt * omt * s.y + 2 * omt * t * cp.y + t * t * e.y)
+                    }
+                    func bezTang(_ t: CGFloat) -> CGFloat {
+                        let dx = 2 * (1 - t) * (cp.x - s.x) + 2 * t * (e.x - cp.x)
+                        let dy = 2 * (1 - t) * (cp.y - s.y) + 2 * t * (e.y - cp.y)
+                        return atan2(dy, dx)
+                    }
+
+                    let shaftEnd = bezPt(shaftEndT)
+                    let perpHead = bezTang(1.0) + .pi / 2
+                    let leftHead = NSPoint(x: shaftEnd.x + headWidth * cos(perpHead), y: shaftEnd.y + headWidth * sin(perpHead))
+                    let rightHead = NSPoint(x: shaftEnd.x - headWidth * cos(perpHead), y: shaftEnd.y - headWidth * sin(perpHead))
+
+                    var leftPts: [NSPoint] = [], rightPts: [NSPoint] = []
+                    for i in 0...steps {
+                        let t = CGFloat(i) / CGFloat(steps) * shaftEndT
+                        let pt = bezPt(t)
+                        let tang = bezTang(t)
+                        let perp = tang + .pi / 2
+                        let hw = shaftWidth / 2
+                        leftPts.append(NSPoint(x: pt.x + hw * cos(perp), y: pt.y + hw * sin(perp)))
+                        rightPts.append(NSPoint(x: pt.x - hw * cos(perp), y: pt.y - hw * sin(perp)))
+                    }
+
+                    let fp = NSBezierPath()
+                    fp.move(to: leftPts[0])
+                    for i in 1..<leftPts.count { fp.line(to: leftPts[i]) }
+                    fp.line(to: leftHead); fp.line(to: e); fp.line(to: rightHead)
+                    for i in stride(from: rightPts.count - 1, through: 0, by: -1) { fp.line(to: rightPts[i]) }
+                    fp.close()
+                    nsColor.setFill(); fp.fill()
+                } else {
+                    let perpAngle = angle + .pi / 2
+                    let halfShaft = shaftWidth / 2
+                    let headBase = NSPoint(x: e.x - headLength * cos(angle), y: e.y - headLength * sin(angle))
+
+                    let fp = NSBezierPath()
+                    fp.move(to: NSPoint(x: s.x + halfShaft * cos(perpAngle), y: s.y + halfShaft * sin(perpAngle)))
+                    fp.line(to: NSPoint(x: headBase.x + halfShaft * cos(perpAngle), y: headBase.y + halfShaft * sin(perpAngle)))
+                    fp.line(to: NSPoint(x: headBase.x + headWidth * cos(perpAngle), y: headBase.y + headWidth * sin(perpAngle)))
+                    fp.line(to: e)
+                    fp.line(to: NSPoint(x: headBase.x - headWidth * cos(perpAngle), y: headBase.y - headWidth * sin(perpAngle)))
+                    fp.line(to: NSPoint(x: headBase.x - halfShaft * cos(perpAngle), y: headBase.y - halfShaft * sin(perpAngle)))
+                    fp.line(to: NSPoint(x: s.x - halfShaft * cos(perpAngle), y: s.y - halfShaft * sin(perpAngle)))
+                    fp.close()
+                    nsColor.setFill(); fp.fill()
+                }
+            }
         case .text:
             if !ann.text.isEmpty {
                 let fSize = ann.fontSize * sx

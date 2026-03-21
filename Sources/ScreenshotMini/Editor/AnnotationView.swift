@@ -14,13 +14,16 @@ struct AnnotationView: View {
                     drawFreehand(ctx: ctx)
                 } else {
                     let s = annotation.start, e = annotation.end
-                    let path = shapePath(from: s, to: e)
-                    if annotation.filled && (annotation.shape == .rect || annotation.shape == .circle) {
-                        let opacity: Double = annotation.solidFill ? 1.0 : 0.3
-                        ctx.fill(path, with: .color(annotation.color.opacity(opacity)))
+                    if annotation.shape == .arrow {
+                        drawArrow(ctx: ctx, from: s, to: e)
+                    } else {
+                        let path = shapePath(from: s, to: e)
+                        if annotation.filled && (annotation.shape == .rect || annotation.shape == .circle) {
+                            let opacity: Double = annotation.solidFill ? 1.0 : 0.3
+                            ctx.fill(path, with: .color(annotation.color.opacity(opacity)))
+                        }
+                        ctx.stroke(path, with: .color(annotation.color), lineWidth: annotation.lineWidth)
                     }
-                    ctx.stroke(path, with: .color(annotation.color), lineWidth: annotation.lineWidth)
-                    if annotation.shape == .arrow { drawArrowhead(ctx: ctx, from: s, to: e) }
                 }
             }
             .allowsHitTesting(false)
@@ -68,21 +71,186 @@ struct AnnotationView: View {
         switch annotation.shape {
         case .rect: p.addRect(r)
         case .circle: p.addEllipse(in: r)
-        case .line, .arrow: p.move(to: s); p.addLine(to: e)
-        case .text, .freehand: break
+        case .line: p.move(to: s); p.addLine(to: e)
+        case .arrow, .text, .freehand: break
         }
         return p
     }
 
-    private func drawArrowhead(ctx: GraphicsContext, from s: CGPoint, to e: CGPoint) {
-        let angle = atan2(e.y - s.y, e.x - s.x)
+    // MARK: - Arrow drawing
+
+    private func drawArrow(ctx: GraphicsContext, from s: CGPoint, to e: CGPoint) {
+        let cp = annotation.controlPoint
+        let hasCurve = cp != nil
+
+        // Tangent angle at the end point (for arrowhead direction)
+        let angle: CGFloat
+        if let cp = cp {
+            angle = atan2(e.y - cp.y, e.x - cp.x)
+        } else {
+            angle = atan2(e.y - s.y, e.x - s.x)
+        }
+
+        switch annotation.arrowStyle {
+        case .thin:
+            drawThinArrow(ctx: ctx, from: s, to: e, cp: cp, angle: angle, hasCurve: hasCurve)
+        case .outline:
+            drawOutlineArrow(ctx: ctx, from: s, to: e, cp: cp, angle: angle, hasCurve: hasCurve)
+        case .filled:
+            drawFilledArrow(ctx: ctx, from: s, to: e, cp: cp, angle: angle, hasCurve: hasCurve)
+        }
+    }
+
+    /// Thin arrow: simple line + arrowhead lines (original style)
+    private func drawThinArrow(ctx: GraphicsContext, from s: CGPoint, to e: CGPoint, cp: CGPoint?, angle: CGFloat, hasCurve: Bool) {
+        // Shaft
+        var shaft = Path()
+        shaft.move(to: s)
+        if let cp = cp {
+            shaft.addQuadCurve(to: e, control: cp)
+        } else {
+            shaft.addLine(to: e)
+        }
+        ctx.stroke(shaft, with: .color(annotation.color), lineWidth: annotation.lineWidth)
+
+        // Arrowhead lines
         let hl: CGFloat = 15, ha: CGFloat = .pi / 6
-        var p = Path()
-        p.move(to: e)
-        p.addLine(to: CGPoint(x: e.x - hl * cos(angle - ha), y: e.y - hl * sin(angle - ha)))
-        p.move(to: e)
-        p.addLine(to: CGPoint(x: e.x - hl * cos(angle + ha), y: e.y - hl * sin(angle + ha)))
-        ctx.stroke(p, with: .color(annotation.color), lineWidth: annotation.lineWidth)
+        var head = Path()
+        head.move(to: e)
+        head.addLine(to: CGPoint(x: e.x - hl * cos(angle - ha), y: e.y - hl * sin(angle - ha)))
+        head.move(to: e)
+        head.addLine(to: CGPoint(x: e.x - hl * cos(angle + ha), y: e.y - hl * sin(angle + ha)))
+        ctx.stroke(head, with: .color(annotation.color), lineWidth: annotation.lineWidth)
+    }
+
+    /// Outline arrow: stroked triangular arrowhead + shaft line
+    private func drawOutlineArrow(ctx: GraphicsContext, from s: CGPoint, to e: CGPoint, cp: CGPoint?, angle: CGFloat, hasCurve: Bool) {
+        let hl: CGFloat = 20, ha: CGFloat = .pi / 6
+
+        // Arrowhead triangle (stroked, not filled)
+        let tip = e
+        let left = CGPoint(x: e.x - hl * cos(angle - ha), y: e.y - hl * sin(angle - ha))
+        let right = CGPoint(x: e.x - hl * cos(angle + ha), y: e.y - hl * sin(angle + ha))
+        let baseCenter = CGPoint(x: (left.x + right.x) / 2, y: (left.y + right.y) / 2)
+
+        var head = Path()
+        head.move(to: tip)
+        head.addLine(to: left)
+        head.addLine(to: right)
+        head.closeSubpath()
+        ctx.stroke(head, with: .color(annotation.color), lineWidth: annotation.lineWidth)
+
+        // Shaft (line to base of arrowhead)
+        var shaft = Path()
+        shaft.move(to: s)
+        if let cp = cp {
+            shaft.addQuadCurve(to: baseCenter, control: cp)
+        } else {
+            shaft.addLine(to: baseCenter)
+        }
+        ctx.stroke(shaft, with: .color(annotation.color), lineWidth: annotation.lineWidth)
+    }
+
+    /// Filled arrow: thick filled arrow path (Shottr-style big visible arrow)
+    private func drawFilledArrow(ctx: GraphicsContext, from s: CGPoint, to e: CGPoint, cp: CGPoint?, angle: CGFloat, hasCurve: Bool) {
+        let shaftWidth = annotation.lineWidth * 3
+        let headLength: CGFloat = max(shaftWidth * 3, 30)
+        let headWidth: CGFloat = max(shaftWidth * 2.5, 25)
+
+        // Compute the point where the shaft meets the arrowhead base
+        let totalLength = hypot(e.x - s.x, e.y - s.y)
+        guard totalLength > 1 else { return }
+
+        if hasCurve, let cp = cp {
+            // For curved filled arrow, we build left/right offset curves for the shaft
+            // and a filled triangular head at the end
+            let headRatio = min(headLength / totalLength, 0.5)
+            let shaftEndT = max(0, 1.0 - headRatio)
+
+            // Sample the bezier for shaft end point
+            let shaftEnd = bezierPoint(t: shaftEndT, from: s, control: cp, to: e)
+            // Arrowhead
+            let perpHead = bezierTangentAngle(t: 1.0, from: s, control: cp, to: e) + .pi / 2
+            let tip = e
+            let leftHead = CGPoint(x: shaftEnd.x + headWidth * cos(perpHead), y: shaftEnd.y + headWidth * sin(perpHead))
+            let rightHead = CGPoint(x: shaftEnd.x - headWidth * cos(perpHead), y: shaftEnd.y - headWidth * sin(perpHead))
+
+            // Shaft outline: offset curve left and right
+            let steps = 12
+            var leftPoints: [CGPoint] = []
+            var rightPoints: [CGPoint] = []
+            for i in 0...steps {
+                let t = CGFloat(i) / CGFloat(steps) * shaftEndT
+                let pt = bezierPoint(t: t, from: s, control: cp, to: e)
+                let tang = bezierTangentAngle(t: t, from: s, control: cp, to: e)
+                let perp = tang + .pi / 2
+                let halfW = shaftWidth / 2
+                leftPoints.append(CGPoint(x: pt.x + halfW * cos(perp), y: pt.y + halfW * sin(perp)))
+                rightPoints.append(CGPoint(x: pt.x - halfW * cos(perp), y: pt.y - halfW * sin(perp)))
+            }
+
+            var path = Path()
+            // Left side of shaft
+            path.move(to: leftPoints[0])
+            for i in 1..<leftPoints.count { path.addLine(to: leftPoints[i]) }
+            // Left head wing
+            path.addLine(to: leftHead)
+            // Tip
+            path.addLine(to: tip)
+            // Right head wing
+            path.addLine(to: rightHead)
+            // Right side of shaft (reversed)
+            for i in stride(from: rightPoints.count - 1, through: 0, by: -1) { path.addLine(to: rightPoints[i]) }
+            path.closeSubpath()
+
+            ctx.fill(path, with: .color(annotation.color))
+        } else {
+            // Straight filled arrow
+            let perpAngle = angle + .pi / 2
+            let halfShaft = shaftWidth / 2
+
+            // Shaft base corners
+            let shaftBaseLeft = CGPoint(x: s.x + halfShaft * cos(perpAngle), y: s.y + halfShaft * sin(perpAngle))
+            let shaftBaseRight = CGPoint(x: s.x - halfShaft * cos(perpAngle), y: s.y - halfShaft * sin(perpAngle))
+
+            // Shaft meets head
+            let headBase = CGPoint(x: e.x - headLength * cos(angle), y: e.y - headLength * sin(angle))
+            let shaftTopLeft = CGPoint(x: headBase.x + halfShaft * cos(perpAngle), y: headBase.y + halfShaft * sin(perpAngle))
+            let shaftTopRight = CGPoint(x: headBase.x - halfShaft * cos(perpAngle), y: headBase.y - halfShaft * sin(perpAngle))
+
+            // Head wings
+            let headLeft = CGPoint(x: headBase.x + headWidth * cos(perpAngle), y: headBase.y + headWidth * sin(perpAngle))
+            let headRight = CGPoint(x: headBase.x - headWidth * cos(perpAngle), y: headBase.y - headWidth * sin(perpAngle))
+
+            var path = Path()
+            path.move(to: shaftBaseLeft)
+            path.addLine(to: shaftTopLeft)
+            path.addLine(to: headLeft)
+            path.addLine(to: e)
+            path.addLine(to: headRight)
+            path.addLine(to: shaftTopRight)
+            path.addLine(to: shaftBaseRight)
+            path.closeSubpath()
+
+            ctx.fill(path, with: .color(annotation.color))
+        }
+    }
+
+    // MARK: - Bézier helpers
+
+    private func bezierPoint(t: CGFloat, from a: CGPoint, control c: CGPoint, to b: CGPoint) -> CGPoint {
+        let omt = 1 - t
+        return CGPoint(
+            x: omt * omt * a.x + 2 * omt * t * c.x + t * t * b.x,
+            y: omt * omt * a.y + 2 * omt * t * c.y + t * t * b.y
+        )
+    }
+
+    private func bezierTangentAngle(t: CGFloat, from a: CGPoint, control c: CGPoint, to b: CGPoint) -> CGFloat {
+        // Derivative of quadratic Bézier: 2(1-t)(c-a) + 2t(b-c)
+        let dx = 2 * (1 - t) * (c.x - a.x) + 2 * t * (b.x - c.x)
+        let dy = 2 * (1 - t) * (c.y - a.y) + 2 * t * (b.y - c.y)
+        return atan2(dy, dx)
     }
 }
 

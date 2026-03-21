@@ -32,6 +32,16 @@ struct SelectionOverlay: View {
                 ctx.fill(Path(hr), with: .color(.white))
                 ctx.stroke(Path(hr), with: .color(brandPurple), lineWidth: 2)
             }
+            // Midpoint handle for arrows (control point or default midpoint)
+            if annotation.shape == .arrow {
+                let mp = annotation.controlPoint ?? CGPoint(
+                    x: (annotation.start.x + annotation.end.x) / 2,
+                    y: (annotation.start.y + annotation.end.y) / 2
+                )
+                let hr = CGRect(x: mp.x - hs/2, y: mp.y - hs/2, width: hs, height: hs)
+                ctx.fill(Path(hr), with: .color(.white))
+                ctx.stroke(Path(hr), with: .color(brandPurple), lineWidth: 2)
+            }
         }
         .allowsHitTesting(false)
     }

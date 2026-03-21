@@ -14,6 +14,7 @@ struct AnnotationToolbar: View {
     let onChangeLineWidth: (CGFloat) -> Void
     let onChangeFillMode: (FillMode) -> Void
     let onChangeFontSize: (CGFloat) -> Void
+    let onChangeArrowStyle: (ArrowStyle) -> Void
     let onDeselect: () -> Void
     let onDelete: () -> Void
 
@@ -75,6 +76,19 @@ struct AnnotationToolbar: View {
                                active: annotation.filled && annotation.solidFill)
                 }
             }
+
+            // Arrow style (only for arrow)
+            if annotation.shape == .arrow {
+                Divider().frame(height: 18)
+                HStack(spacing: 2) {
+                    arrowStyleButton(icon: "arrow.right", style: .outline,
+                                     active: annotation.arrowStyle == .outline, weight: .ultraLight)
+                    arrowStyleButton(icon: "arrow.right", style: .thin,
+                                     active: annotation.arrowStyle == .thin, weight: .regular)
+                    arrowStyleButton(icon: "arrowshape.right.fill", style: .filled,
+                                     active: annotation.arrowStyle == .filled, weight: .regular)
+                }
+            }
         }
         .padding(.horizontal, 8).padding(.vertical, 5)
         .background(
@@ -132,6 +146,16 @@ struct AnnotationToolbar: View {
         Button { onChangeFillMode(mode) } label: {
             Image(systemName: icon)
                 .font(.system(size: 13))
+                .frame(width: 24, height: 22)
+                .background(RoundedRectangle(cornerRadius: 4)
+                    .fill(active ? brandPurple.opacity(0.2) : Color.clear))
+        }.buttonStyle(.plain)
+    }
+
+    private func arrowStyleButton(icon: String, style: ArrowStyle, active: Bool, weight: Font.Weight) -> some View {
+        Button { onChangeArrowStyle(style) } label: {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: weight))
                 .frame(width: 24, height: 22)
                 .background(RoundedRectangle(cornerRadius: 4)
                     .fill(active ? brandPurple.opacity(0.2) : Color.clear))

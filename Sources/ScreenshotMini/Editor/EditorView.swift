@@ -31,6 +31,7 @@ struct EditorView: View {
     @State private var annotationLineWidth: CGFloat = 3
     @State private var annotationFilled: Bool = false
     @State private var fontSize: CGFloat = 20
+    @State private var arrowStyle: ArrowStyle = .thin
 
     private var selectedAnnotation: Annotation? {
         guard let id = selectedId else { return nil }
@@ -258,6 +259,7 @@ struct EditorView: View {
                     onChangeLineWidth: { w in setAnnotationLineWidth(w); annotationLineWidth = w },
                     onChangeFillMode: { m in setAnnotationFillMode(m) },
                     onChangeFontSize: { s in setAnnotationFontSize(s); fontSize = s },
+                    onChangeArrowStyle: { s in setAnnotationArrowStyle(s); arrowStyle = s },
                     onDeselect: { selectedId = nil; selectedTool = nil },
                     onDelete: { deleteSelected() }
                 )
@@ -315,7 +317,8 @@ struct EditorView: View {
                 selectedId = nil
                 commitTextIfNeeded()
                 interaction = .drawing(Annotation(shape: shape, start: start, end: current,
-                                                  color: annotationColor, lineWidth: annotationLineWidth, filled: annotationFilled))
+                                                  color: annotationColor, lineWidth: annotationLineWidth, filled: annotationFilled,
+                                                  arrowStyle: shape == .arrow ? arrowStyle : .thin))
             }
             // Priority 5: Deselect if clicking on nothing
             else {
@@ -512,7 +515,7 @@ struct EditorView: View {
         }
         return Annotation(shape: shape, start: .zero, end: .zero,
                           color: annotationColor, lineWidth: annotationLineWidth,
-                          fontSize: fontSize)
+                          fontSize: fontSize, arrowStyle: arrowStyle)
     }
 
     private var isTextContext: Bool {
@@ -581,6 +584,13 @@ struct EditorView: View {
         guard let id = selectedId, let idx = history.annotations.firstIndex(where: { $0.id == id }) else { return }
         history.save()
         history.annotations[idx].fontSize = size
+    }
+
+    private func setAnnotationArrowStyle(_ style: ArrowStyle) {
+        arrowStyle = style
+        guard let id = selectedId, let idx = history.annotations.firstIndex(where: { $0.id == id }) else { return }
+        history.save()
+        history.annotations[idx].arrowStyle = style
     }
 
     private func adjustLineWidth(_ delta: CGFloat) {

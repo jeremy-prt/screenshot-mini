@@ -6,11 +6,20 @@ enum AnnotationShape: Equatable, Sendable {
     case rect, circle, line, arrow, text, freehand
 }
 
+// MARK: - Arrow style
+
+enum ArrowStyle: Equatable, Sendable {
+    case outline    // hollow arrowhead
+    case thin       // simple line + arrowhead (current behavior)
+    case filled     // thick filled arrow (big visible arrow like Shottr)
+}
+
 // MARK: - Resize handle
 
 enum ResizeHandle: Equatable {
     case topLeft, topRight, bottomLeft, bottomRight
     case startPoint, endPoint
+    case midPoint  // control point for arrow curve
 }
 
 // MARK: - Single annotation
@@ -27,10 +36,13 @@ struct Annotation: Identifiable, Equatable {
     var text: String
     var fontSize: CGFloat
     var points: [CGPoint]
+    var arrowStyle: ArrowStyle
+    var controlPoint: CGPoint?
 
     init(shape: AnnotationShape, start: CGPoint, end: CGPoint,
          color: Color = .red, lineWidth: CGFloat = 3, filled: Bool = false, solidFill: Bool = false,
-         text: String = "", fontSize: CGFloat = 20, points: [CGPoint] = []) {
+         text: String = "", fontSize: CGFloat = 20, points: [CGPoint] = [],
+         arrowStyle: ArrowStyle = .thin, controlPoint: CGPoint? = nil) {
         self.id = UUID()
         self.shape = shape
         self.start = start
@@ -42,6 +54,8 @@ struct Annotation: Identifiable, Equatable {
         self.text = text
         self.fontSize = fontSize
         self.points = points
+        self.arrowStyle = arrowStyle
+        self.controlPoint = controlPoint
     }
 
     var boundingRect: CGRect {
@@ -53,6 +67,10 @@ struct Annotation: Identifiable, Equatable {
             let w = max(CGFloat(text.count) * fontSize * 0.6, 20)
             let h = fontSize * 1.4
             return CGRect(x: start.x, y: start.y - h, width: w, height: h)
+        }
+        if shape == .arrow, let cp = controlPoint {
+            let xs = [start.x, end.x, cp.x], ys = [start.y, end.y, cp.y]
+            return CGRect(x: xs.min()!, y: ys.min()!, width: xs.max()! - xs.min()!, height: ys.max()! - ys.min()!)
         }
         return CGRect(
             x: min(start.x, end.x), y: min(start.y, end.y),
@@ -69,7 +87,12 @@ struct Annotation: Identifiable, Equatable {
             let outer = boundingRect.insetBy(dx: -tolerance, dy: -tolerance)
             let inner = boundingRect.insetBy(dx: tolerance, dy: tolerance)
             return outer.contains(point) && (inner.width < 0 || inner.height < 0 || !inner.contains(point))
-        case .line, .arrow:
+        case .line:
+            return distanceToSegment(point: point, from: start, to: end) < tolerance
+        case .arrow:
+            if let cp = controlPoint {
+                return distanceToBezier(point: point, from: start, control: cp, to: end) < tolerance
+            }
             return distanceToSegment(point: point, from: start, to: end) < tolerance
         case .text:
             return boundingRect.insetBy(dx: -tolerance, dy: -tolerance).contains(point)
@@ -95,6 +118,13 @@ struct Annotation: Identifiable, Equatable {
                 return handle
             }
         }
+        // Midpoint handle for arrows (control point or default midpoint)
+        if shape == .arrow {
+            let mp = controlPoint ?? CGPoint(x: (start.x + end.x) / 2, y: (start.y + end.y) / 2)
+            if hypot(point.x - mp.x, point.y - mp.y) < tolerance {
+                return .midPoint
+            }
+        }
         return nil
     }
 
@@ -104,6 +134,21 @@ struct Annotation: Identifiable, Equatable {
         guard lenSq > 0 else { return hypot(point.x - a.x, point.y - a.y) }
         let t = max(0, min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / lenSq))
         return hypot(point.x - (a.x + t * dx), point.y - (a.y + t * dy))
+    }
+
+    /// Approximate distance to a quadratic Bézier curve by sampling
+    private func distanceToBezier(point: CGPoint, from a: CGPoint, control c: CGPoint, to b: CGPoint) -> CGFloat {
+        var minDist: CGFloat = .greatestFiniteMagnitude
+        let steps = 20
+        for i in 0...steps {
+            let t = CGFloat(i) / CGFloat(steps)
+            let oneMinusT = 1 - t
+            let px = oneMinusT * oneMinusT * a.x + 2 * oneMinusT * t * c.x + t * t * b.x
+            let py = oneMinusT * oneMinusT * a.y + 2 * oneMinusT * t * c.y + t * t * b.y
+            let d = hypot(point.x - px, point.y - py)
+            if d < minDist { minDist = d }
+        }
+        return minDist
     }
 
     // MARK: - Resize
@@ -124,6 +169,8 @@ struct Annotation: Identifiable, Equatable {
             start = point
         case .endPoint:
             end = point
+        case .midPoint:
+            controlPoint = point
         }
     }
 
@@ -134,6 +181,11 @@ struct Annotation: Identifiable, Equatable {
         start.y += delta.height
         end.x += delta.width
         end.y += delta.height
+        if var cp = controlPoint {
+            cp.x += delta.width
+            cp.y += delta.height
+            controlPoint = cp
+        }
         for i in points.indices {
             points[i].x += delta.width
             points[i].y += delta.height
