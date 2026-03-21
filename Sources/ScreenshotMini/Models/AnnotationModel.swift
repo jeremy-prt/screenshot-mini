@@ -28,6 +28,7 @@ enum ResizeHandle: Equatable {
     case topLeft, topRight, bottomLeft, bottomRight
     case startPoint, endPoint
     case midPoint  // control point for arrow curve
+    case rotating  // rotation handle above top-center
 }
 
 // MARK: - Single annotation
@@ -49,13 +50,15 @@ struct Annotation: Identifiable, Equatable {
     var textHasBackground: Bool
     var blurRadius: CGFloat
     var blurStyle: BlurStyle
+    var rotation: Double
 
     init(shape: AnnotationShape, start: CGPoint, end: CGPoint,
          color: Color = .red, lineWidth: CGFloat = 3, filled: Bool = false, solidFill: Bool = false,
          text: String = "", fontSize: CGFloat = 20, points: [CGPoint] = [],
          arrowStyle: ArrowStyle = .thin, controlPoint: CGPoint? = nil,
          textHasBackground: Bool = true,
-         blurRadius: CGFloat = 10, blurStyle: BlurStyle = .gaussian) {
+         blurRadius: CGFloat = 10, blurStyle: BlurStyle = .gaussian,
+         rotation: Double = 0) {
         self.id = UUID()
         self.shape = shape
         self.start = start
@@ -72,6 +75,7 @@ struct Annotation: Identifiable, Equatable {
         self.textHasBackground = textHasBackground
         self.blurRadius = blurRadius
         self.blurStyle = blurStyle
+        self.rotation = rotation
     }
 
     var boundingRect: CGRect {
@@ -132,6 +136,13 @@ struct Annotation: Identifiable, Equatable {
 
     func handleAt(_ point: CGPoint, tolerance: CGFloat = 10) -> ResizeHandle? {
         let r = boundingRect
+
+        // Rotation handle: 25px above top-center
+        let rotHandlePos = CGPoint(x: r.midX, y: r.minY - 25)
+        if hypot(point.x - rotHandlePos.x, point.y - rotHandlePos.y) < tolerance {
+            return .rotating
+        }
+
         let corners: [(CGPoint, ResizeHandle)] = [
             (CGPoint(x: r.minX, y: r.minY), .topLeft),
             (CGPoint(x: r.maxX, y: r.minY), .topRight),
@@ -204,6 +215,10 @@ struct Annotation: Identifiable, Equatable {
             end = point
         case .midPoint:
             controlPoint = point
+        case .rotating:
+            let center = CGPoint(x: boundingRect.midX, y: boundingRect.midY)
+            let angle = atan2(point.x - center.x, -(point.y - center.y))
+            rotation = angle * 180 / .pi
         }
     }
 
@@ -282,7 +297,8 @@ struct Annotation: Identifiable, Equatable {
             points: points, arrowStyle: arrowStyle,
             controlPoint: controlPoint,
             textHasBackground: textHasBackground,
-            blurRadius: blurRadius, blurStyle: blurStyle
+            blurRadius: blurRadius, blurStyle: blurStyle,
+            rotation: rotation
         )
         if offset.width != 0 || offset.height != 0 {
             copy.start.x += offset.width

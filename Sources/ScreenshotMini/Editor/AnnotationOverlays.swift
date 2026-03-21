@@ -20,6 +20,14 @@ struct HoverOverlay: View {
 
 struct SelectionOverlay: View {
     let annotation: Annotation
+    var canvasSize: CGSize = .zero
+
+    /// Anchor point for rotation: annotation center as UnitPoint within the canvas frame
+    private var rotationAnchor: UnitPoint {
+        guard canvasSize.width > 0 && canvasSize.height > 0 else { return .center }
+        let r = annotation.boundingRect
+        return UnitPoint(x: r.midX / canvasSize.width, y: r.midY / canvasSize.height)
+    }
 
     var body: some View {
         Canvas { ctx, _ in
@@ -43,8 +51,26 @@ struct SelectionOverlay: View {
                 ctx.fill(Path(hr), with: .color(.white))
                 ctx.stroke(Path(hr), with: .color(brandPurple), lineWidth: 2)
             }
+
+            // Rotation handle: circle 25px above top-center, connected by a thin line
+            let topCenter = CGPoint(x: r.midX, y: r.minY)
+            let rotHandle = CGPoint(x: r.midX, y: r.minY - 25)
+
+            // Connecting line
+            var line = Path()
+            line.move(to: topCenter)
+            line.addLine(to: rotHandle)
+            ctx.stroke(line, with: .color(brandPurple.opacity(0.6)), lineWidth: 1)
+
+            // Rotation circle handle
+            let rotSize: CGFloat = 10
+            let rotRect = CGRect(x: rotHandle.x - rotSize / 2, y: rotHandle.y - rotSize / 2,
+                                 width: rotSize, height: rotSize)
+            ctx.fill(Path(ellipseIn: rotRect), with: .color(brandPurple))
+            ctx.stroke(Path(ellipseIn: rotRect), with: .color(.white), lineWidth: 1.5)
         }
         .allowsHitTesting(false)
+        .rotationEffect(.degrees(annotation.rotation), anchor: rotationAnchor)
     }
 }
 

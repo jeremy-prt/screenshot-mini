@@ -208,7 +208,8 @@ struct EditorView: View {
                                 BlurRegionView(annotation: ann, image: currentImage,
                                                canvasSize: CGSize(width: dw, height: dh))
                             } else {
-                                AnnotationView(annotation: ann)
+                                AnnotationView(annotation: ann,
+                                               canvasSize: CGSize(width: dw, height: dh))
                             }
                         }
                     }.frame(width: dw, height: dh)
@@ -226,7 +227,9 @@ struct EditorView: View {
                                            canvasSize: CGSize(width: dw, height: dh))
                                 .frame(width: dw, height: dh)
                         } else {
-                            AnnotationView(annotation: ann).frame(width: dw, height: dh)
+                            AnnotationView(annotation: ann,
+                                           canvasSize: CGSize(width: dw, height: dh))
+                                .frame(width: dw, height: dh)
                         }
                     }
                     if case .freehand(let pts) = interaction, pts.count >= 2 {
@@ -247,7 +250,9 @@ struct EditorView: View {
 
                     // Selection
                     if let sel = selectedAnnotation, editingTextId != sel.id {
-                        SelectionOverlay(annotation: sel).frame(width: dw, height: dh)
+                        SelectionOverlay(annotation: sel,
+                                         canvasSize: CGSize(width: dw, height: dh))
+                            .frame(width: dw, height: dh)
                     }
 
                     // Crop
@@ -328,12 +333,16 @@ struct EditorView: View {
                 cropStart = start; cropEnd = current; return
             }
 
-            // Priority 1: Resize handle of selected annotation
+            // Priority 1: Resize/rotation handle of selected annotation
             if let id = selectedId,
                let ann = history.annotations.first(where: { $0.id == id }),
                let handle = ann.handleAt(start) {
                 history.save()
-                interaction = .resizing(id, handle)
+                if handle == .rotating {
+                    interaction = .rotating(id)
+                } else {
+                    interaction = .resizing(id, handle)
+                }
             }
             // Priority 2: Move the selected annotation if clicking on it
             else if let id = selectedId,
@@ -404,6 +413,13 @@ struct EditorView: View {
             if let idx = history.annotations.firstIndex(where: { $0.id == id }) {
                 history.annotations[idx].resize(handle: handle, to: current)
             }
+        case .rotating(let id):
+            if let idx = history.annotations.firstIndex(where: { $0.id == id }) {
+                let center = history.annotations[idx].boundingRect
+                let cx = center.midX, cy = center.midY
+                let angle = atan2(current.x - cx, -(current.y - cy))
+                history.annotations[idx].rotation = angle * 180 / .pi
+            }
         case .none:
             if selectedTool == "crop" { cropEnd = current }
         }
@@ -430,7 +446,7 @@ struct EditorView: View {
                 history.annotations.append(ann)
                 selectedId = ann.id
             }
-        case .moving, .resizing:
+        case .moving, .resizing, .rotating:
             break
         case .none:
             break

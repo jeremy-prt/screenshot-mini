@@ -6,12 +6,22 @@ import CoreImage
 
 struct AnnotationView: View {
     let annotation: Annotation
+    var canvasSize: CGSize = .zero
+
+    /// Anchor point for rotation: annotation center expressed as UnitPoint within the canvas frame
+    private var rotationAnchor: UnitPoint {
+        guard canvasSize.width > 0 && canvasSize.height > 0 else { return .center }
+        let r = annotation.boundingRect
+        return UnitPoint(x: r.midX / canvasSize.width, y: r.midY / canvasSize.height)
+    }
 
     var body: some View {
         if annotation.shape == .text {
             textView
+                .rotationEffect(.degrees(annotation.rotation), anchor: rotationAnchor)
         } else if annotation.shape == .blur {
             blurPreview
+                .rotationEffect(.degrees(annotation.rotation), anchor: rotationAnchor)
         } else {
             Canvas { ctx, _ in
                 if annotation.shape == .freehand {
@@ -31,6 +41,7 @@ struct AnnotationView: View {
                 }
             }
             .allowsHitTesting(false)
+            .rotationEffect(.degrees(annotation.rotation), anchor: rotationAnchor)
         }
     }
 
@@ -393,6 +404,13 @@ struct BlurRegionView: View {
     let image: NSImage
     let canvasSize: CGSize
 
+    /// Anchor point for rotation: annotation center as UnitPoint within the canvas frame
+    private var rotationAnchor: UnitPoint {
+        guard canvasSize.width > 0 && canvasSize.height > 0 else { return .center }
+        let r = annotation.boundingRect
+        return UnitPoint(x: r.midX / canvasSize.width, y: r.midY / canvasSize.height)
+    }
+
     var body: some View {
         let rect = annotation.boundingRect
         guard rect.width > 2 && rect.height > 2 else { return AnyView(EmptyView()) }
@@ -412,6 +430,7 @@ struct BlurRegionView: View {
             .clipShape(Rectangle())
             .position(x: rect.midX, y: rect.midY)
             .allowsHitTesting(false)
+            .rotationEffect(.degrees(annotation.rotation), anchor: rotationAnchor)
         )
     }
 

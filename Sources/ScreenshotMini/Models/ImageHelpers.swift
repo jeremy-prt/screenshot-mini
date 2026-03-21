@@ -105,6 +105,22 @@ func flattenAnnotations(_ annotations: [Annotation], onto image: NSImage, canvas
         let path = NSBezierPath()
         path.lineWidth = ann.lineWidth * sx
 
+        // Apply rotation transform around annotation center in image coordinates
+        let hasRotation = ann.rotation != 0
+        if hasRotation {
+            NSGraphicsContext.saveGraphicsState()
+            let canvasRect = ann.boundingRect
+            // Center in image coordinates (Y-flipped)
+            let cx = canvasRect.midX * sx
+            let cy = (canvasSize.height - canvasRect.midY) * sy
+            let transform = NSAffineTransform()
+            transform.translateX(by: cx, yBy: cy)
+            // Negative because canvas Y is flipped relative to image Y
+            transform.rotate(byDegrees: CGFloat(-ann.rotation))
+            transform.translateX(by: -cx, yBy: -cy)
+            transform.concat()
+        }
+
         switch ann.shape {
         case .rect:
             let r = NSRect(x: min(s.x, e.x), y: min(s.y, e.y), width: abs(e.x - s.x), height: abs(e.y - s.y))
@@ -313,6 +329,8 @@ func flattenAnnotations(_ annotations: [Annotation], onto image: NSImage, canvas
                 height: min(imgSize.height - max(0, blurRect.origin.y - pad), blurRect.height + pad * 2)
             )
 
+            // Restore rotation transform before unlocking focus (blur needs to extract unrotated pixels)
+            if hasRotation { NSGraphicsContext.restoreGraphicsState() }
             result.unlockFocus()
             let padRegion = NSImage(size: padRect.size)
             padRegion.lockFocus()
@@ -323,7 +341,10 @@ func flattenAnnotations(_ annotations: [Annotation], onto image: NSImage, canvas
             guard let tiff = padRegion.tiffRepresentation,
                   let bitmap = NSBitmapImageRep(data: tiff),
                   let cgRegion = bitmap.cgImage else {
-                result.lockFocus(); break
+                result.lockFocus()
+                // Re-save state for the end-of-loop restore
+                if hasRotation { NSGraphicsContext.saveGraphicsState() }
+                break
             }
 
             let ciImage = CIImage(cgImage: cgRegion)
@@ -353,6 +374,18 @@ func flattenAnnotations(_ annotations: [Annotation], onto image: NSImage, canvas
             }
 
             result.lockFocus()
+            // Re-save and re-apply rotation transform after re-locking focus for blur
+            if hasRotation {
+                NSGraphicsContext.saveGraphicsState()
+                let canvasRect = ann.boundingRect
+                let cx = canvasRect.midX * sx
+                let cy = (canvasSize.height - canvasRect.midY) * sy
+                let transform = NSAffineTransform()
+                transform.translateX(by: cx, yBy: cy)
+                transform.rotate(byDegrees: CGFloat(-ann.rotation))
+                transform.translateX(by: -cx, yBy: -cy)
+                transform.concat()
+            }
             if let out = output,
                let cgResult = CIContext().createCGImage(out, from: fullExtent) {
                 // Draw only the inner (non-padded) part back
@@ -360,6 +393,11 @@ func flattenAnnotations(_ annotations: [Annotation], onto image: NSImage, canvas
                 fullBlurred.draw(in: blurRect, from: innerRect,
                                  operation: .copy, fraction: 1.0)
             }
+        }
+
+        // Restore graphics state after rotation
+        if hasRotation {
+            NSGraphicsContext.restoreGraphicsState()
         }
     }
     result.unlockFocus()
@@ -376,4 +414,5 @@ enum CanvasInteraction {
     case moving(UUID, CGPoint)        // moving annotation, last point
     case resizing(UUID, ResizeHandle)  // resizing via handle
     case freehand([CGPoint])          // collecting freehand points
+    case rotating(UUID)               // rotating annotation
 }
