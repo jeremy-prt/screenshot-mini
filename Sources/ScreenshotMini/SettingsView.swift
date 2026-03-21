@@ -97,7 +97,7 @@ struct SettingsView: View {
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
-                        .foregroundStyle(selectedTab == tab ? Color.accentColor : Color.secondary)
+                        .foregroundStyle(selectedTab == tab ? brandPurple : Color.secondary)
                     }
                     .buttonStyle(.plain)
                 }
@@ -125,6 +125,7 @@ struct SettingsView: View {
         }
         .frame(width: 440)
         .fixedSize(horizontal: false, vertical: true)
+        .tint(brandPurple)
         .onAppear {
             DispatchQueue.main.async {
                 NSApp.activate(ignoringOtherApps: true)
@@ -250,11 +251,11 @@ struct SettingsView: View {
                                     .padding(.vertical, 8)
                                     .background(
                                         RoundedRectangle(cornerRadius: 8)
-                                            .fill(position == pos.rawValue ? Color.accentColor.opacity(0.15) : Color.clear)
+                                            .fill(position == pos.rawValue ? brandPurple.opacity(0.15) : Color.clear)
                                     )
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
-                                            .stroke(position == pos.rawValue ? Color.accentColor : Color.secondary.opacity(0.3), lineWidth: 1)
+                                            .stroke(position == pos.rawValue ? brandPurple : Color.secondary.opacity(0.3), lineWidth: 1)
                                     )
                                 }
                                 .buttonStyle(.plain)
