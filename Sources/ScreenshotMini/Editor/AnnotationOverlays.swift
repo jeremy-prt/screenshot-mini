@@ -284,6 +284,31 @@ struct ZoomIndicator: View {
     }
 }
 
+// MARK: - Scroll Wheel View (for pan/zoom via trackpad)
+
+struct ScrollWheelView: NSViewRepresentable {
+    let onScroll: (_ dx: CGFloat, _ dy: CGFloat, _ isZoom: Bool) -> Void
+
+    func makeNSView(context: Context) -> ScrollWheelNSView {
+        let view = ScrollWheelNSView()
+        view.onScroll = onScroll
+        return view
+    }
+
+    func updateNSView(_ nsView: ScrollWheelNSView, context: Context) {
+        nsView.onScroll = onScroll
+    }
+}
+
+final class ScrollWheelNSView: NSView {
+    var onScroll: ((_ dx: CGFloat, _ dy: CGFloat, _ isZoom: Bool) -> Void)?
+
+    override func scrollWheel(with event: NSEvent) {
+        let isZoom = event.modifierFlags.contains(.command)
+        onScroll?(event.scrollingDeltaX, event.scrollingDeltaY, isZoom)
+    }
+}
+
 struct CropMask: Shape {
     let rect: CGRect; let size: CGSize
     func path(in frame: CGRect) -> Path {

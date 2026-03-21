@@ -212,6 +212,27 @@ struct EditorView: View {
                 history.redo(); syncSelection()
             }
 
+            Divider().frame(height: 18).padding(.horizontal, 2)
+
+            // Zoom
+            Button { zoomOut() } label: {
+                Image(systemName: "minus.magnifyingglass").font(.system(size: 12))
+                    .frame(width: 24, height: 28)
+            }.buttonStyle(.plain).background(NativeTooltip(tooltip: "Zoom out (⌘-)"))
+
+            Button { zoomReset() } label: {
+                Text("\(Int(zoomLevel * 100))%")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .frame(minWidth: 36, minHeight: 28)
+            }.buttonStyle(.plain).background(NativeTooltip(tooltip: "Reset zoom (⌘0)"))
+
+            Button { zoomIn() } label: {
+                Image(systemName: "plus.magnifyingglass").font(.system(size: 12))
+                    .frame(width: 24, height: 28)
+            }.buttonStyle(.plain).background(NativeTooltip(tooltip: "Zoom in (⌘+)"))
+
+            Divider().frame(height: 18).padding(.horizontal, 2)
+
             // Copy
             Button {
                 var img = flattenAnnotations(history.annotations, onto: currentImage, canvasSize: canvasSize)
@@ -349,20 +370,22 @@ struct EditorView: View {
                 .gesture(
                     MagnifyGesture()
                         .onChanged { value in
-                            let newZoom = max(0.25, min(10, zoomLevel * value.magnification))
-                            zoomLevel = newZoom
+                            zoomLevel = max(0.25, min(10, zoomLevel * value.magnification))
                         }
                 )
-            }
-
-            // Zoom indicator (bottom-right)
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-                    ZoomIndicator(zoom: zoomLevel, onZoomIn: zoomIn, onZoomOut: zoomOut, onReset: zoomReset)
-                        .padding(10)
-                }
+                .background(
+                    ScrollWheelView { dx, dy, isZoom in
+                        if isZoom {
+                            // Pinch zoom on trackpad (sent as scroll with phase)
+                            let factor = 1.0 + dy * 0.01
+                            zoomLevel = max(0.25, min(10, zoomLevel * factor))
+                        } else if zoomLevel > 1.01 {
+                            // Pan when zoomed
+                            panOffset.width += dx
+                            panOffset.height += dy
+                        }
+                    }
+                )
             }
 
             // Crop toolbar (top-right)
