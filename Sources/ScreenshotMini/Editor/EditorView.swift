@@ -11,7 +11,7 @@ import AppKit
         let radius: CGFloat = 7
 
         // White arc (270°, from bottom going clockwise to the left)
-        ctx.setStrokeColor(NSColor.white.cgColor)
+        ctx.setStrokeColor(NSColor.black.cgColor)
         ctx.setLineWidth(2)
         ctx.setLineCap(.round)
         let startAngle: CGFloat = .pi * -0.25   // ~315° — start near top-right
@@ -31,7 +31,7 @@ import AppKit
         let arrowLen: CGFloat = 5
         let spread: CGFloat = .pi * 0.35   // half-angle of arrowhead
 
-        ctx.setFillColor(NSColor.white.cgColor)
+        ctx.setFillColor(NSColor.black.cgColor)
         ctx.beginPath()
         ctx.move(to: tip)
         ctx.addLine(to: CGPoint(
