@@ -56,30 +56,30 @@ Sources/ScreenshotMini/
 │   └── Constants.swift            # brandPurple (#9F01A0)
 ├── Editor/
 │   ├── EditorWindow.swift         # NSWindow + NSToolbar unifiedCompact, traffic lights alignment
-│   ├── EditorView.swift           # Canvas, toolbar SwiftUI, gestes (draw/move/resize/crop), undo, copy/paste, option-drag
-│   ├── AnnotationToolbar.swift    # Floating toolbar : color picker, thickness slider, fill/arrow style, blur controls
-│   ├── AnnotationView.swift       # Rendu Canvas : rect/circle/line/freehand, 4 styles fleche, Bezier
+│   ├── EditorView.swift           # Canvas, toolbar SwiftUI, gestes (draw/move/resize/rotate/crop/zoom), undo, copy/paste, option-drag
+│   ├── AnnotationToolbar.swift    # Floating toolbar : color picker, thickness slider, fill/arrow/blur style
+│   ├── AnnotationView.swift       # Rendu Canvas : rect/circle/line/freehand, 4 styles fleche, Bezier, blur
 │   ├── AnnotationOverlays.swift   # HoverOverlay, SelectionOverlay, TextEditingOverlay, CropToolbar, CropMask
 │   ├── ToolbarButton.swift        # ToolbarButton avec tooltip + shortcut
-│   └── DragMeButton.swift         # Bouton drag & drop image depuis l'editeur
+│   └── DragMeButton.swift         # Bouton drag & drop image depuis l'editeur (ferme la fenetre apres drop)
 ├── Models/
-│   ├── AnnotationModel.swift      # Annotation struct, AnnotationShape, ArrowStyle, BlurStyle, ResizeHandle, hit test, resize, move, duplicate
+│   ├── AnnotationModel.swift      # Annotation struct, AnnotationShape, ArrowStyle, BlurStyle, ResizeHandle (.rotating), hit test, resize, rotate, move, duplicate
 │   ├── AnnotationHistory.swift    # AnnotationHistory (undo/redo stack)
-│   └── ImageHelpers.swift         # flattenAnnotations, cropImage, saveImage
+│   └── ImageHelpers.swift         # flattenAnnotations, cropImage, saveImage, normalizeImageDPI, CanvasInteraction
 ├── Services/
 │   ├── HotkeyManager.swift        # Multi-hotkeys Carbon (fullscreen/area/OCR), HotkeySlot, UCKeyTranslate AZERTY
 │   ├── ScreenCaptureService.swift  # screencapture CLI (fullscreen/area/OCR), post-capture actions, son
-│   └── ToastManager.swift         # Toast flottant (succes OCR, copy, save)
+│   └── ToastManager.swift         # Toast capsule adaptatif light/dark, slide-down animation
 ├── Settings/
 │   ├── SettingsView.swift         # Shell 4 onglets
-│   ├── GeneralTab.swift           # Onglet General
+│   ├── GeneralTab.swift           # Theme (System/Light/Dark), menu bar, son, langue, OCR langue
 │   ├── ShortcutsTab.swift         # Onglet Raccourcis
-│   ├── CaptureTab.swift           # Onglet Capture
-│   ├── SaveTab.swift              # Onglet Sauvegarde
-│   ├── SettingsModels.swift       # Modeles partagés settings
+│   ├── CaptureTab.swift           # Actions post-capture, export Retina/Standard, preview position/stack/delay
+│   ├── SaveTab.swift              # Format image (PNG/JPEG/TIFF), dossier destination
+│   ├── SettingsModels.swift       # Modeles partagés settings (ImageFormat, ScreenPosition…)
 │   └── LaunchAtLoginToggle.swift  # Toggle launch at login
 ├── Thumbnail/
-│   ├── ThumbnailPanel.swift       # Coordinateur preview flottante, auto-dismiss, position
+│   ├── ThumbnailPanel.swift       # Coordinateur preview flottante, auto-dismiss, position, export Retina
 │   ├── ThumbnailNSPanel.swift     # NSPanel custom (drag source sendEvent)
 │   ├── ThumbnailView.swift        # SwiftUI view de la preview
 │   └── WindowDragHandle.swift     # Handle drag pour pin
@@ -96,19 +96,24 @@ docs/                          # Landing page + guide install
 
 - **Code signing dev** : certificat "ScreenshotMini Dev" dans le Keychain pour que TCC persiste entre builds. `build-dmg.sh` re-signe en ad-hoc pour distribution.
 - **Drag & drop preview** : gere au niveau `ThumbnailNSPanel.sendEvent` (pas de gesture recognizer) pour coexister avec les boutons SwiftUI
-- **Editeur gestes** : `CanvasInteraction` enum avec priorite handles > move selected > move hit > draw new
+- **Drag & drop editeur** : `DragMeButton` dans la toolbar SwiftUI ; ferme la fenetre apres le drop
+- **Editeur gestes** : `CanvasInteraction` enum avec priorite handles (resize/rotate) > move selected > move hit > draw new
 - **Editeur toolbar** : NSToolbar unifiedCompact vide → decale les traffic lights vers le bas pour aligner avec la toolbar SwiftUI (hauteur 38pt). Padding gauche de 70pt dans la toolbar SwiftUI pour eviter le chevauchement.
 - **Curseur preview** : `NSEvent.addGlobalMonitorForEvents(.mouseMoved)` force arrow car nonactivatingPanel
 - **Curseur editeur** : `onContinuousHover` + `NSCursor` (fonctionne car NSWindow standard)
-- **Raccourcis clavier** : `UCKeyTranslate` pour AZERTY, `keyEquivalent` natif dans le menu. Dans l'editeur, hidden Buttons avec `.keyboardShortcut` pour V/C/R/O/L/A/T/D/B/Esc + ⌘C/⌘V (copy/paste annotation).
+- **Raccourcis clavier** : `UCKeyTranslate` pour AZERTY, `keyEquivalent` natif dans le menu. Dans l'editeur, hidden Buttons avec `.keyboardShortcut` pour V/C/R/O/L/A/T/D/B/Esc + ⌘C/⌘V (copy/paste annotation) + ⌘+/⌘-/⌘0 (zoom).
+- **Zoom** : `MagnifyGesture` pour pinch trackpad, `ScrollWheelView` (NSView wrappee) pour capturer scroll events — pan quand zoom > 1, zoom avec ⌘ enfonce. Boutons toolbar + hidden Buttons pour les raccourcis clavier.
+- **Rotation** : `ResizeHandle.rotating` = handle positionne 25pt au-dessus du bounding box centre, tourne avec l'annotation (calcul de rotation dans `handleAt`). `CanvasInteraction.rotating(UUID)` dans handleDrag. Curseur fleche circulaire `rotateCursor` dessine programmatiquement (arc + fleche).
 - **Crop undo** : push dans `imageUndoStack: [(NSImage, [Annotation])]`. `history.undo()` prend priorite ; si vide, pop imageUndoStack.
 - **Bezier fleche** : `controlPoint` optionnel dans `Annotation`. Drag du midpoint handle → update controlPoint. Rendu via `addQuadCurve`.
 - **Fill mode** : `filled` + `solidFill` booleans → `FillMode` enum (.outline / .semiFilled / .solidFilled) dans l'UI.
 - **Freehand** : draw via `CanvasInteraction.freehand([CGPoint])`, lisse avec quadCurve mid-points.
-- **Blur tool** : CIFilter (CIGaussianBlur / CIPixellate) applique sur la region selectionnee de l'image source. Preview en temps reel via BlurRegionView.
-- **Copy/paste** : ⌘C copie l'annotation selectionnee dans un clipboard interne, ⌘V colle avec offset +20,+20. Pastes successifs cascadent.
+- **Blur tool** : CIFilter (CIGaussianBlur / CIPixellate) applique sur la region selectionnee de l'image source. Preview en temps reel via BlurRegionView. Rendu dans flattenAnnotations : unlock focus + re-lock pour extraire les pixels apres avoir dessine les annotations precedentes.
+- **Copy/paste** : ⌘C copie l'annotation selectionnee dans un clipboard interne, ⌘V colle avec offset +20,+20. Pastes successifs cascadent (clipboard pointe sur la derniere copie collee).
 - **Option-drag duplicate** : maintenir Option pendant le drag duplique l'annotation au lieu de la deplacer (comme Figma). Utilise `NSEvent.modifierFlags.contains(.option)`.
-- **Annotation.duplicate()** : methode qui cree une copie avec un nouvel UUID, optionnellement decalee.
+- **Annotation.duplicate()** : methode qui cree une copie avec un nouvel UUID, optionnellement decalee (start, end, controlPoint, points tous translatees).
+- **Toast adaptatif** : `ToastManager.shared.show(title:subtitle:)` lit `appTheme` UserDefaults et `AppleInterfaceStyle` pour determiner isDark. `ToastView` capsule avec fond blanc/dark, animation slide-down 0.3s entree, fade-out 0.3s apres 2.5s.
+- **Export Retina** : `exportRetina` bool dans UserDefaults. Si false, `normalizeImageDPI()` downscale l'image a la resolution en points (1x). Utilise lors du save (ImageHelpers + ThumbnailPanel) et du copy depuis l'editeur.
 
 ### Repo GitHub
 
