@@ -15,6 +15,7 @@ struct AnnotationToolbar: View {
     let onChangeFillMode: (FillMode) -> Void
     let onChangeFontSize: (CGFloat) -> Void
     let onChangeArrowStyle: (ArrowStyle) -> Void
+    let onChangeTextBackground: (Bool) -> Void
     let onDeselect: () -> Void
     let onDelete: () -> Void
 
@@ -49,17 +50,14 @@ struct AnnotationToolbar: View {
 
             // Thickness or font size
             if annotation.shape == .text {
-                HStack(spacing: 1) {
-                    Button { onChangeFontSize(max(8, annotation.fontSize - 2)) } label: {
-                        Image(systemName: "minus").font(.system(size: 9, weight: .bold)).frame(width: 20, height: 22)
-                    }.buttonStyle(.plain)
-                    Text("\(Int(annotation.fontSize))px")
-                        .font(.system(size: 10, weight: .medium, design: .monospaced))
-                        .foregroundStyle(.secondary).frame(width: 34)
-                    Button { onChangeFontSize(min(80, annotation.fontSize + 2)) } label: {
-                        Image(systemName: "plus").font(.system(size: 9, weight: .bold)).frame(width: 20, height: 22)
-                    }.buttonStyle(.plain)
-                }
+                ThicknessSlider(
+                    value: annotation.fontSize,
+                    range: 12...60,
+                    onChange: onChangeFontSize
+                )
+                Text("\(Int(annotation.fontSize))px")
+                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .foregroundStyle(.secondary).frame(width: 30)
             } else {
                 thicknessControl
             }
@@ -74,6 +72,36 @@ struct AnnotationToolbar: View {
                                active: annotation.filled && !annotation.solidFill)
                     fillButton(icon: "square.fill", mode: .solidFilled,
                                active: annotation.filled && annotation.solidFill)
+                }
+            }
+
+            // Text background mode (only for text)
+            if annotation.shape == .text {
+                Divider().frame(height: 18)
+                HStack(spacing: 2) {
+                    // With background
+                    Button { onChangeTextBackground(true) } label: {
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 3)
+                                .fill(Color.primary.opacity(0.7))
+                                .frame(width: 16, height: 14)
+                            Text("T")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(Color(nsColor: .windowBackgroundColor))
+                        }
+                        .frame(width: 24, height: 22)
+                        .background(RoundedRectangle(cornerRadius: 4)
+                            .fill(annotation.textHasBackground ? brandPurple.opacity(0.2) : Color.clear))
+                    }.buttonStyle(.plain)
+
+                    // Plain text
+                    Button { onChangeTextBackground(false) } label: {
+                        Text("T")
+                            .font(.system(size: 13, weight: .bold))
+                            .frame(width: 24, height: 22)
+                            .background(RoundedRectangle(cornerRadius: 4)
+                                .fill(!annotation.textHasBackground ? brandPurple.opacity(0.2) : Color.clear))
+                    }.buttonStyle(.plain)
                 }
             }
 

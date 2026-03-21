@@ -39,11 +39,13 @@ struct Annotation: Identifiable, Equatable {
     var points: [CGPoint]
     var arrowStyle: ArrowStyle
     var controlPoint: CGPoint?
+    var textHasBackground: Bool
 
     init(shape: AnnotationShape, start: CGPoint, end: CGPoint,
          color: Color = .red, lineWidth: CGFloat = 3, filled: Bool = false, solidFill: Bool = false,
          text: String = "", fontSize: CGFloat = 20, points: [CGPoint] = [],
-         arrowStyle: ArrowStyle = .thin, controlPoint: CGPoint? = nil) {
+         arrowStyle: ArrowStyle = .thin, controlPoint: CGPoint? = nil,
+         textHasBackground: Bool = true) {
         self.id = UUID()
         self.shape = shape
         self.start = start
@@ -57,6 +59,7 @@ struct Annotation: Identifiable, Equatable {
         self.points = points
         self.arrowStyle = arrowStyle
         self.controlPoint = controlPoint
+        self.textHasBackground = textHasBackground
     }
 
     var boundingRect: CGRect {
@@ -65,9 +68,9 @@ struct Annotation: Identifiable, Equatable {
             return CGRect(x: xs.min()!, y: ys.min()!, width: xs.max()! - xs.min()!, height: ys.max()! - ys.min()!)
         }
         if shape == .text {
-            let w = max(CGFloat(text.count) * fontSize * 0.6, 20)
-            let h = fontSize * 1.4
-            return CGRect(x: start.x, y: start.y - h, width: w, height: h)
+            let w = max(CGFloat(text.count) * fontSize * 0.55 + 10, 20)
+            let h = fontSize * 1.3 + 8
+            return CGRect(x: start.x, y: start.y, width: w, height: h)
         }
         if shape == .arrow, let cp = controlPoint {
             let xs = [start.x, end.x, cp.x], ys = [start.y, end.y, cp.y]

@@ -204,11 +204,33 @@ func flattenAnnotations(_ annotations: [Annotation], onto image: NSImage, canvas
             if !ann.text.isEmpty {
                 let fSize = ann.fontSize * sx
                 let font = NSFont.systemFont(ofSize: fSize, weight: .medium)
-                let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: nsColor]
-                let str = NSAttributedString(string: ann.text, attributes: attrs)
                 let tx = ann.start.x * sx
-                let ty = (canvasSize.height - ann.start.y) * sy - fSize
-                str.draw(at: NSPoint(x: tx, y: ty))
+                // start.y is top-left in canvas (Y-down), convert to AppKit (Y-up)
+                let ty = (canvasSize.height - ann.start.y) * sy
+
+                if ann.textHasBackground {
+                    // Draw background rounded rect
+                    let textW = max(CGFloat(ann.text.count) * fSize * 0.55 + 10 * sx, 20 * sx)
+                    let textH = fSize * 1.3 + 8 * sy
+                    let bgRect = NSRect(x: tx, y: ty - textH, width: textW, height: textH)
+                    let bgPath = NSBezierPath(roundedRect: bgRect, xRadius: 4 * sx, yRadius: 4 * sy)
+                    nsColor.setFill()
+                    bgPath.fill()
+
+                    // Determine contrast text color
+                    let rgbColor = nsColor.usingColorSpace(.deviceRGB) ?? nsColor
+                    let r = rgbColor.redComponent, g = rgbColor.greenComponent, b = rgbColor.blueComponent
+                    let luminance = 0.299 * r + 0.587 * g + 0.114 * b
+                    let textNSColor: NSColor = luminance > 0.6 ? .black : .white
+
+                    let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: textNSColor]
+                    let str = NSAttributedString(string: ann.text, attributes: attrs)
+                    str.draw(at: NSPoint(x: tx + 5 * sx, y: ty - textH + 4 * sy))
+                } else {
+                    let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: nsColor]
+                    let str = NSAttributedString(string: ann.text, attributes: attrs)
+                    str.draw(at: NSPoint(x: tx + 5 * sx, y: ty - fSize * 1.3 - 4 * sy))
+                }
             }
         case .freehand:
             guard ann.points.count >= 2 else { break }

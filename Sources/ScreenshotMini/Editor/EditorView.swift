@@ -34,6 +34,7 @@ struct EditorView: View {
     @State private var annotationSolidFill: Bool = false
     @State private var fontSize: CGFloat = 20
     @State private var arrowStyle: ArrowStyle = .thin
+    @State private var textHasBackground: Bool = true
 
     private var selectedAnnotation: Annotation? {
         guard let id = selectedId else { return nil }
@@ -205,6 +206,7 @@ struct EditorView: View {
                             position: ann.start,
                             fontSize: ann.fontSize,
                             color: ann.color,
+                            textHasBackground: ann.textHasBackground,
                             onCommit: { commitTextEdit() }
                         )
                         .frame(width: dw, height: dh)
@@ -264,6 +266,7 @@ struct EditorView: View {
                     onChangeFillMode: { m in setAnnotationFillMode(m) },
                     onChangeFontSize: { s in setAnnotationFontSize(s); fontSize = s },
                     onChangeArrowStyle: { s in setAnnotationArrowStyle(s); arrowStyle = s },
+                    onChangeTextBackground: { v in setAnnotationTextBackground(v); textHasBackground = v },
                     onDeselect: { selectedId = nil; selectedTool = "cursor" },
                     onDelete: { deleteSelected() }
                 )
@@ -390,7 +393,8 @@ struct EditorView: View {
         if selectedTool == "text" {
             commitTextIfNeeded()
             let ann = Annotation(shape: .text, start: pt, end: pt,
-                                 color: annotationColor, fontSize: fontSize)
+                                 color: annotationColor, fontSize: fontSize,
+                                 textHasBackground: textHasBackground)
             history.save()
             history.annotations.append(ann)
             selectedId = ann.id
@@ -530,7 +534,8 @@ struct EditorView: View {
         return Annotation(shape: shape, start: .zero, end: .zero,
                           color: annotationColor, lineWidth: annotationLineWidth,
                           filled: annotationFilled, solidFill: annotationSolidFill,
-                          fontSize: fontSize, arrowStyle: arrowStyle)
+                          fontSize: fontSize, arrowStyle: arrowStyle,
+                          textHasBackground: textHasBackground)
     }
 
     private func commitTextIfNeeded() {
@@ -591,6 +596,13 @@ struct EditorView: View {
         guard let id = selectedId, let idx = history.annotations.firstIndex(where: { $0.id == id }) else { return }
         history.save()
         history.annotations[idx].arrowStyle = style
+    }
+
+    private func setAnnotationTextBackground(_ value: Bool) {
+        textHasBackground = value
+        guard let id = selectedId, let idx = history.annotations.firstIndex(where: { $0.id == id }) else { return }
+        history.save()
+        history.annotations[idx].textHasBackground = value
     }
 
 }

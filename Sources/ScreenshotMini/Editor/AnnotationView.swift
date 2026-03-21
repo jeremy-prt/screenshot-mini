@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 // MARK: - Annotation View
 
@@ -33,17 +34,32 @@ struct AnnotationView: View {
     @ViewBuilder
     private var textView: some View {
         if !annotation.text.isEmpty {
-            Text(annotation.text)
-                .font(.system(size: annotation.fontSize, weight: .medium))
-                .foregroundStyle(annotation.color)
-                .position(x: annotation.start.x + textWidth / 2,
-                          y: annotation.start.y + annotation.fontSize * 0.7 / 2)
-                .allowsHitTesting(false)
+            let rect = annotation.boundingRect
+            let textColor: Color = annotation.textHasBackground ? textColorForBackground(annotation.color) : annotation.color
+
+            ZStack(alignment: .topLeading) {
+                if annotation.textHasBackground {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(annotation.color)
+                        .frame(width: rect.width, height: rect.height)
+                }
+                Text(annotation.text)
+                    .font(.system(size: annotation.fontSize, weight: .medium))
+                    .foregroundStyle(textColor)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 4)
+            }
+            .position(x: rect.midX, y: rect.midY)
+            .allowsHitTesting(false)
         }
     }
 
-    private var textWidth: CGFloat {
-        CGFloat(annotation.text.count) * annotation.fontSize * 0.6
+    /// Returns white or black text depending on background luminance
+    private func textColorForBackground(_ color: Color) -> Color {
+        let nsColor = NSColor(color).usingColorSpace(.deviceRGB) ?? NSColor(color)
+        let r = nsColor.redComponent, g = nsColor.greenComponent, b = nsColor.blueComponent
+        let luminance = 0.299 * r + 0.587 * g + 0.114 * b
+        return luminance > 0.6 ? .black : .white
     }
 
     private func drawFreehand(ctx: GraphicsContext) {

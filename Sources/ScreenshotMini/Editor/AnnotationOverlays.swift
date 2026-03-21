@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 // MARK: - Hover Overlay
 
@@ -54,30 +55,47 @@ struct TextEditingOverlay: View {
     let position: CGPoint
     let fontSize: CGFloat
     let color: Color
+    let textHasBackground: Bool
     let onCommit: () -> Void
 
     @FocusState private var isFocused: Bool
 
     var body: some View {
+        let textColor: Color = textHasBackground ? contrastTextColor(for: color) : color
+
         ZStack(alignment: .topLeading) {
             Color.clear
             TextField("", text: $text)
                 .textFieldStyle(.plain)
                 .font(.system(size: fontSize, weight: .medium))
-                .foregroundStyle(color)
+                .foregroundStyle(textColor)
                 .focused($isFocused)
                 .frame(minWidth: 100, maxWidth: 400)
                 .fixedSize()
-                .padding(.horizontal, 2)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 4)
                 .background(
-                    RoundedRectangle(cornerRadius: 2)
-                        .stroke(brandPurple.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [3, 2]))
+                    ZStack {
+                        if textHasBackground {
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(color)
+                        }
+                        RoundedRectangle(cornerRadius: 4)
+                            .stroke(brandPurple.opacity(0.5), style: StrokeStyle(lineWidth: 1, dash: [3, 2]))
+                    }
                 )
-                .position(x: position.x + 52, y: position.y + fontSize * 0.35)
+                .position(x: position.x + 55, y: position.y + fontSize * 0.65 + 4)
                 .onSubmit { onCommit() }
                 .onAppear { isFocused = true }
         }
         .allowsHitTesting(true)
+    }
+
+    private func contrastTextColor(for color: Color) -> Color {
+        let nsColor = NSColor(color).usingColorSpace(.deviceRGB) ?? NSColor(color)
+        let r = nsColor.redComponent, g = nsColor.greenComponent, b = nsColor.blueComponent
+        let luminance = 0.299 * r + 0.587 * g + 0.114 * b
+        return luminance > 0.6 ? .black : .white
     }
 }
 
