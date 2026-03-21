@@ -157,7 +157,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         let hostingView = NSHostingView(rootView: settingsView)
 
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 380, height: 200),
+            contentRect: NSRect(x: 0, y: 0, width: 440, height: 620),
             styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false

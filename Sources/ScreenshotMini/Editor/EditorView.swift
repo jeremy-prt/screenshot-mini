@@ -1,5 +1,6 @@
 import SwiftUI
 import AppKit
+import CoreImage
 
 // MARK: - Custom rotate cursor
 
@@ -106,6 +107,9 @@ struct EditorView: View {
     @State private var blurRadius: CGFloat = 10
     @State private var blurStyle: BlurStyle = .gaussian
 
+    // Background
+    @State private var bgConfig = BackgroundConfig()
+
     private var selectedAnnotation: Annotation? {
         guard let id = selectedId else { return nil }
         return history.annotations.first { $0.id == id }
@@ -138,6 +142,7 @@ struct EditorView: View {
         ("character.textbox", "text", "Text", "T"),
         ("applepencil.gen1", "draw", "Draw", "D"),
         ("eye.slash", "blur", "Blur", "B"),
+        ("photo.artframe", "background", "Background", "F"),
     ]
 
     var body: some View {
@@ -172,6 +177,7 @@ struct EditorView: View {
                 Button("") { selectTool("text") }.keyboardShortcut("t", modifiers: []).hidden()
                 Button("") { selectTool("draw") }.keyboardShortcut("d", modifiers: []).hidden()
                 Button("") { selectTool("blur") }.keyboardShortcut("b", modifiers: []).hidden()
+                Button("") { selectTool("background") }.keyboardShortcut("f", modifiers: []).hidden()
                 Button("") { selectTool(nil) }.keyboardShortcut(.escape, modifiers: []).hidden()
                 // Zoom
                 Button("") { zoomIn() }.keyboardShortcut("+", modifiers: .command).hidden()
@@ -243,7 +249,7 @@ struct EditorView: View {
 
             // Copy
             Button {
-                var img = flattenAnnotations(history.annotations, onto: currentImage, canvasSize: canvasSize)
+                var img = buildFinalImage()
                 if !UserDefaults.standard.bool(forKey: "exportRetina") { img = normalizeImageDPI(img) }
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.writeObjects([img])
@@ -259,7 +265,7 @@ struct EditorView: View {
 
             // Save
             Button {
-                let img = flattenAnnotations(history.annotations, onto: currentImage, canvasSize: canvasSize)
+                let img = buildFinalImage()
                 saveImage(img, to: savePath)
                 onClose()
             } label: {
@@ -280,93 +286,114 @@ struct EditorView: View {
 
             GeometryReader { geo in
                 let imgSize = currentImage.size
-                let fitScale = min(geo.size.width / max(imgSize.width, 1), geo.size.height / max(imgSize.height, 1))
+                // STABLE dw/dh — never affected by background toggle
+                let fitScale = min(geo.size.width / max(imgSize.width, 1),
+                                   geo.size.height / max(imgSize.height, 1))
                 let dw = imgSize.width * fitScale, dh = imgSize.height * fitScale
                 let ox = (geo.size.width - dw) / 2
                 let oy = (geo.size.height - dh) / 2
 
-                ZStack(alignment: .topLeading) {
-                    Image(nsImage: currentImage).resizable().aspectRatio(contentMode: .fit)
-                        .frame(width: dw, height: dh)
+                // Background: visual shrink so canvas + padding fits in same area
+                let padPct = bgConfig.enabled ? bgConfig.padding / 100.0 : 0
+                let bgShrink = bgConfig.enabled ? 1.0 / (1.0 + 2.0 * padPct) : 1.0
+                let cornerPx = bgConfig.enabled
+                    ? bgConfig.cornerRadius / 100.0 * min(dw * bgShrink, dh * bgShrink) / 2 : 0
+                let shadowPx = bgConfig.enabled ? dw * (1 - bgShrink) / 2 : 0
 
-                    // Annotations (hide text being edited to avoid duplication)
-                    ForEach(history.annotations) { ann in
-                        if ann.id != editingTextId {
+                ZStack {
+                    // Background gradient/color (fills dw x dh, visible around the shrunk canvas)
+                    if bgConfig.enabled {
+                        backgroundView(width: dw, height: dh)
+                            .frame(width: dw, height: dh)
+                            .allowsHitTesting(false)
+                    }
+
+                    // Inner canvas: dw x dh coordinate space, visually shrunk when bg on
+                    ZStack(alignment: .topLeading) {
+                        Image(nsImage: currentImage).resizable().aspectRatio(contentMode: .fit)
+                            .frame(width: dw, height: dh)
+
+                        ForEach(history.annotations) { ann in
+                            if ann.id != editingTextId {
+                                if ann.shape == .blur {
+                                    BlurRegionView(annotation: ann, image: currentImage,
+                                                   canvasSize: CGSize(width: dw, height: dh))
+                                } else {
+                                    AnnotationView(annotation: ann,
+                                                   canvasSize: CGSize(width: dw, height: dh))
+                                }
+                            }
+                        }.frame(width: dw, height: dh)
+
+                        if let hId = hoveredId, hId != selectedId,
+                           let hAnn = history.annotations.first(where: { $0.id == hId }) {
+                            HoverOverlay(annotation: hAnn, canvasSize: CGSize(width: dw, height: dh))
+                                .frame(width: dw, height: dh)
+                        }
+
+                        if case .drawing(let ann) = interaction {
                             if ann.shape == .blur {
                                 BlurRegionView(annotation: ann, image: currentImage,
                                                canvasSize: CGSize(width: dw, height: dh))
+                                    .frame(width: dw, height: dh)
                             } else {
                                 AnnotationView(annotation: ann,
                                                canvasSize: CGSize(width: dw, height: dh))
+                                    .frame(width: dw, height: dh)
                             }
                         }
-                    }.frame(width: dw, height: dh)
-
-                    // Hover highlight
-                    if let hId = hoveredId, hId != selectedId,
-                       let hAnn = history.annotations.first(where: { $0.id == hId }) {
-                        HoverOverlay(annotation: hAnn, canvasSize: CGSize(width: dw, height: dh))
-                            .frame(width: dw, height: dh)
-                    }
-
-                    // Drawing in progress
-                    if case .drawing(let ann) = interaction {
-                        if ann.shape == .blur {
-                            BlurRegionView(annotation: ann, image: currentImage,
-                                           canvasSize: CGSize(width: dw, height: dh))
-                                .frame(width: dw, height: dh)
-                        } else {
-                            AnnotationView(annotation: ann,
-                                           canvasSize: CGSize(width: dw, height: dh))
+                        if case .freehand(let pts) = interaction, pts.count >= 2 {
+                            FreehandPreview(points: pts, color: annotationColor, lineWidth: annotationLineWidth)
                                 .frame(width: dw, height: dh)
                         }
-                    }
-                    if case .freehand(let pts) = interaction, pts.count >= 2 {
-                        FreehandPreview(points: pts, color: annotationColor, lineWidth: annotationLineWidth)
+
+                        if let editId = editingTextId,
+                           let ann = history.annotations.first(where: { $0.id == editId }) {
+                            TextEditingOverlay(
+                                text: $editingText,
+                                annotation: ann,
+                                canvasSize: CGSize(width: dw, height: dh),
+                                onCommit: { commitTextEdit() }
+                            )
                             .frame(width: dw, height: dh)
-                    }
+                        }
 
-                    // Text editing overlay
-                    if let editId = editingTextId,
-                       let ann = history.annotations.first(where: { $0.id == editId }) {
-                        TextEditingOverlay(
-                            text: $editingText,
-                            annotation: ann,
-                            canvasSize: CGSize(width: dw, height: dh),
-                            onCommit: { commitTextEdit() }
-                        )
-                        .frame(width: dw, height: dh)
-                    }
+                        if let sel = selectedAnnotation, editingTextId != sel.id {
+                            SelectionOverlay(annotation: sel,
+                                             canvasSize: CGSize(width: dw, height: dh))
+                                .frame(width: dw, height: dh)
+                        }
 
-                    // Selection
-                    if let sel = selectedAnnotation, editingTextId != sel.id {
-                        SelectionOverlay(annotation: sel,
-                                         canvasSize: CGSize(width: dw, height: dh))
-                            .frame(width: dw, height: dh)
+                        if selectedTool == "crop", let s = cropStart, let e = cropEnd {
+                            let r = normalizedRect(from: s, to: e)
+                            Color.black.opacity(0.4).frame(width: dw, height: dh)
+                                .mask(CropMask(rect: r, size: CGSize(width: dw, height: dh)))
+                            Rectangle().stroke(Color.white, lineWidth: 2)
+                                .frame(width: r.width, height: r.height).position(x: r.midX, y: r.midY)
+                        }
                     }
-
-                    // Crop
-                    if selectedTool == "crop", let s = cropStart, let e = cropEnd {
-                        let r = normalizedRect(from: s, to: e)
-                        Color.black.opacity(0.4).frame(width: dw, height: dh)
-                            .mask(CropMask(rect: r, size: CGSize(width: dw, height: dh)))
-                        Rectangle().stroke(Color.white, lineWidth: 2)
-                            .frame(width: r.width, height: r.height).position(x: r.midX, y: r.midY)
-                    }
+                    .frame(width: dw, height: dh)
+                    .clipShape(bgConfig.enabled ? AnyShape(RoundedRectangle(cornerRadius: cornerPx)) : AnyShape(Rectangle()))
+                    .shadow(color: bgConfig.enabled && bgConfig.shadowEnabled
+                                ? .black.opacity(bgConfig.shadowOpacity) : .clear,
+                            radius: bgConfig.enabled ? shadowPx * 0.5 : 0,
+                            y: bgConfig.enabled ? shadowPx * 0.15 : 0)
+                    .scaleEffect(bgShrink)
                 }
                 .frame(width: dw, height: dh)
+                .contentShape(Rectangle())
                 .scaleEffect(zoomLevel)
                 .offset(x: ox + panOffset.width, y: oy + panOffset.height)
                 .gesture(
                     DragGesture(minimumDistance: 1)
-                        .onChanged { v in handleDrag(v, dw: dw, dh: dh, ox: ox, oy: oy) }
+                        .onChanged { v in handleDrag(v, dw: dw, dh: dh, ox: ox, oy: oy, bgShrink: bgShrink) }
                         .onEnded { v in handleDragEnd(v, dw: dw, dh: dh, ox: ox, oy: oy) }
                 )
-                .onTapGesture { loc in handleTap(loc, dw: dw, dh: dh, ox: ox, oy: oy) }
+                .onTapGesture { loc in handleTap(loc, dw: dw, dh: dh, ox: ox, oy: oy, bgShrink: bgShrink) }
                 .onContinuousHover { phase in
                     switch phase {
                     case .active(let loc):
-                        let pt = canvasPoint(loc, dw: dw, dh: dh, ox: ox, oy: oy)
+                        let pt = canvasPoint(loc, dw: dw, dh: dh, ox: ox, oy: oy, bgShrink: bgShrink)
                         updateCursor(at: pt)
                         hoveredId = history.annotations.last(where: { $0.hitTest(pt) })?.id
                     case .ended:
@@ -380,6 +407,7 @@ struct EditorView: View {
                 }
                 .onDisappear { removeScrollMonitors() }
             }
+            .clipped()
 
             // Crop toolbar (top-right)
             if selectedTool == "crop" && cropStart != nil && cropEnd != nil {
@@ -388,6 +416,12 @@ struct EditorView: View {
                     onCancel: { cancelTool() }
                 )
                 .padding(8)
+            }
+
+            // Background panel (top-right)
+            if selectedTool == "background" {
+                BackgroundPanel(config: $bgConfig, onClose: { selectedTool = nil })
+                    .padding(8)
             }
 
             // Annotation properties toolbar (top-right)
@@ -414,16 +448,18 @@ struct EditorView: View {
 
     // MARK: - Gesture handling
 
-    private func canvasPoint(_ location: CGPoint, dw: CGFloat, dh: CGFloat, ox: CGFloat, oy: CGFloat) -> CGPoint {
-        // Account for zoom scale and pan offset
-        let x = (location.x - ox - panOffset.width) / zoomLevel + (dw - dw / zoomLevel) / 2
-        let y = (location.y - oy - panOffset.height) / zoomLevel + (dh - dh / zoomLevel) / 2
+    private func canvasPoint(_ location: CGPoint, dw: CGFloat, dh: CGFloat, ox: CGFloat, oy: CGFloat, bgShrink: CGFloat = 1.0) -> CGPoint {
+        // Combined effective zoom = zoomLevel (user zoom) * bgShrink (background visual scale)
+        // The outer ZStack is dw x dh, canvas inside is scaled by bgShrink from center
+        let ez = zoomLevel * bgShrink
+        let x = (location.x - ox - panOffset.width) / ez + (dw - dw / ez) / 2
+        let y = (location.y - oy - panOffset.height) / ez + (dh - dh / ez) / 2
         return CGPoint(x: max(0, min(x, dw)), y: max(0, min(y, dh)))
     }
 
-    private func handleDrag(_ value: DragGesture.Value, dw: CGFloat, dh: CGFloat, ox: CGFloat, oy: CGFloat) {
-        let start = canvasPoint(value.startLocation, dw: dw, dh: dh, ox: ox, oy: oy)
-        let current = canvasPoint(value.location, dw: dw, dh: dh, ox: ox, oy: oy)
+    private func handleDrag(_ value: DragGesture.Value, dw: CGFloat, dh: CGFloat, ox: CGFloat, oy: CGFloat, bgShrink: CGFloat = 1.0) {
+        let start = canvasPoint(value.startLocation, dw: dw, dh: dh, ox: ox, oy: oy, bgShrink: bgShrink)
+        let current = canvasPoint(value.location, dw: dw, dh: dh, ox: ox, oy: oy, bgShrink: bgShrink)
         canvasSize = CGSize(width: dw, height: dh)
 
         // Determine interaction on first move
@@ -553,8 +589,8 @@ struct EditorView: View {
         interaction = .none
     }
 
-    private func handleTap(_ location: CGPoint, dw: CGFloat, dh: CGFloat, ox: CGFloat, oy: CGFloat) {
-        let pt = canvasPoint(location, dw: dw, dh: dh, ox: ox, oy: oy)
+    private func handleTap(_ location: CGPoint, dw: CGFloat, dh: CGFloat, ox: CGFloat, oy: CGFloat, bgShrink: CGFloat = 1.0) {
+        let pt = canvasPoint(location, dw: dw, dh: dh, ox: ox, oy: oy, bgShrink: bgShrink)
 
         // Text tool: if already editing, commit and switch to select
         if selectedTool == "text" && editingTextId != nil {
@@ -605,6 +641,86 @@ struct EditorView: View {
 
     private func normalizedRect(from s: CGPoint, to e: CGPoint) -> CGRect {
         CGRect(x: min(s.x, e.x), y: min(s.y, e.y), width: abs(e.x - s.x), height: abs(e.y - s.y))
+    }
+
+    // MARK: - Background
+
+    @ViewBuilder
+    private func backgroundView(width: CGFloat, height: CGFloat) -> some View {
+        switch bgConfig.type {
+        case .gradient(let idx):
+            let preset = gradientPresets[min(idx, gradientPresets.count - 1)]
+            LinearGradient(colors: preset.colors,
+                           startPoint: preset.startPoint, endPoint: preset.endPoint)
+                .frame(width: width, height: height)
+        case .solid(let color):
+            color.frame(width: width, height: height)
+        }
+    }
+
+    private func buildFinalImage() -> NSImage {
+        print("[BuildFinal] canvasSize=\(canvasSize) imageSize=\(currentImage.size) bgEnabled=\(bgConfig.enabled)")
+        var img = flattenAnnotations(history.annotations, onto: currentImage, canvasSize: canvasSize)
+        print("[BuildFinal] after flatten: \(img.size)")
+        if bgConfig.enabled {
+            print("[BuildFinal] padding=\(bgConfig.padding)% cornerRadius=\(bgConfig.cornerRadius)%")
+            img = renderWithBackground(img)
+            print("[BuildFinal] after background: \(img.size)")
+        }
+        return img
+    }
+
+    private func renderWithBackground(_ image: NSImage) -> NSImage {
+        let imgPts = image.size
+        guard imgPts.width > 0 && imgPts.height > 0 else { return image }
+
+        let padPct = bgConfig.padding / 100.0
+        let pad = imgPts.width * padPct
+        let radius = bgConfig.cornerRadius / 100.0 * min(imgPts.width, imgPts.height) / 2
+        let totalW = imgPts.width + pad * 2
+        let totalH = imgPts.height + pad * 2
+        guard totalW > 1 && totalH > 1 else { return image }
+
+        // NSImage(size:flipped:drawingHandler:) — Apple's recommended approach
+        // flipped: false = standard AppKit coordinates (Y-up), handles Retina automatically
+        return NSImage(size: NSSize(width: totalW, height: totalH), flipped: false) { bounds in
+            // 1. Background
+            switch self.bgConfig.type {
+            case .gradient(let idx):
+                let preset = gradientPresets[min(idx, gradientPresets.count - 1)]
+                if let gradient = NSGradient(colors: preset.colors.map { NSColor($0) }) {
+                    gradient.draw(in: bounds, angle: -45)
+                }
+            case .solid(let color):
+                NSColor(color).setFill()
+                bounds.fill()
+            }
+
+            // 2. Shadow
+            let imgRect = NSRect(x: pad, y: pad, width: imgPts.width, height: imgPts.height)
+            let rrPath = NSBezierPath(roundedRect: imgRect, xRadius: radius, yRadius: radius)
+
+            if self.bgConfig.shadowEnabled {
+                NSGraphicsContext.saveGraphicsState()
+                let shadow = NSShadow()
+                shadow.shadowColor = NSColor.black.withAlphaComponent(0.3)
+                shadow.shadowBlurRadius = pad * 0.3
+                shadow.shadowOffset = NSSize(width: 0, height: -(pad * 0.08))
+                shadow.set()
+                NSColor.white.setFill()
+                rrPath.fill()
+                NSGraphicsContext.restoreGraphicsState()
+            }
+
+            // 3. Rounded screenshot
+            NSGraphicsContext.saveGraphicsState()
+            rrPath.addClip()
+            image.draw(in: imgRect, from: NSRect(origin: .zero, size: imgPts),
+                       operation: .sourceOver, fraction: 1.0)
+            NSGraphicsContext.restoreGraphicsState()
+
+            return true
+        }
     }
 
     private func applyCrop() {
@@ -770,7 +886,7 @@ struct EditorView: View {
 
     private var showPropertiesToolbar: Bool {
         if selectedId != nil { return true }
-        if let tool = selectedTool, tool != "crop" && tool != "cursor" { return true }
+        if let tool = selectedTool, tool != "crop" && tool != "cursor" && tool != "background" { return true }
         return false
     }
 
