@@ -271,6 +271,37 @@ struct Annotation: Identifiable, Equatable {
         end = CGPoint(x: newRect.maxX, y: newRect.maxY)
     }
 
+    // MARK: - Duplicate
+
+    func duplicate(offset: CGSize = .zero) -> Annotation {
+        var copy = Annotation(
+            shape: shape, start: start, end: end,
+            color: color, lineWidth: lineWidth,
+            filled: filled, solidFill: solidFill,
+            text: text, fontSize: fontSize,
+            points: points, arrowStyle: arrowStyle,
+            controlPoint: controlPoint,
+            textHasBackground: textHasBackground,
+            blurRadius: blurRadius, blurStyle: blurStyle
+        )
+        if offset.width != 0 || offset.height != 0 {
+            copy.start.x += offset.width
+            copy.start.y += offset.height
+            copy.end.x += offset.width
+            copy.end.y += offset.height
+            if var cp = copy.controlPoint {
+                cp.x += offset.width
+                cp.y += offset.height
+                copy.controlPoint = cp
+            }
+            for i in copy.points.indices {
+                copy.points[i].x += offset.width
+                copy.points[i].y += offset.height
+            }
+        }
+        return copy
+    }
+
     // MARK: - Move
 
     mutating func move(by delta: CGSize) {

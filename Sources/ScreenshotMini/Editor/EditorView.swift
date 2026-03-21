@@ -27,6 +27,9 @@ struct EditorView: View {
     @State private var editingTextId: UUID? = nil
     @State private var editingText: String = ""
 
+    // Copy/paste clipboard
+    @State private var clipboard: Annotation? = nil
+
     // Annotation defaults
     @State private var annotationColor: Color = {
         if let hex = UserDefaults.standard.string(forKey: "lastAnnotationColor"),
@@ -109,6 +112,9 @@ struct EditorView: View {
                 Button("") { selectTool("draw") }.keyboardShortcut("d", modifiers: []).hidden()
                 Button("") { selectTool("blur") }.keyboardShortcut("b", modifiers: []).hidden()
                 Button("") { selectTool(nil) }.keyboardShortcut(.escape, modifiers: []).hidden()
+                // Copy/Paste annotations
+                Button("") { copySelectedAnnotation() }.keyboardShortcut("c", modifiers: .command).hidden()
+                Button("") { pasteAnnotation() }.keyboardShortcut("v", modifiers: .command).hidden()
             }
             .frame(width: 0, height: 0)
         )
@@ -326,14 +332,30 @@ struct EditorView: View {
                     let ann = history.annotations.first(where: { $0.id == id }),
                     ann.hitTest(start) {
                 history.save()
-                interaction = .moving(id, start)
+                // Option-drag: duplicate the annotation and move the copy
+                if NSEvent.modifierFlags.contains(.option) {
+                    let copy = ann.duplicate()
+                    history.annotations.append(copy)
+                    selectedId = copy.id
+                    interaction = .moving(copy.id, start)
+                } else {
+                    interaction = .moving(id, start)
+                }
             }
             // Priority 3: Select + move another annotation if clicking on it (no tool required)
             else if let hit = history.annotations.last(where: { $0.hitTest(start) }),
                     activeShapeTool == nil {
-                selectedId = hit.id
                 history.save()
-                interaction = .moving(hit.id, start)
+                // Option-drag: duplicate the annotation and move the copy
+                if NSEvent.modifierFlags.contains(.option) {
+                    let copy = hit.duplicate()
+                    history.annotations.append(copy)
+                    selectedId = copy.id
+                    interaction = .moving(copy.id, start)
+                } else {
+                    selectedId = hit.id
+                    interaction = .moving(hit.id, start)
+                }
             }
             // Priority 4: Draw new shape if tool is active
             else if selectedTool == "draw" {
@@ -507,6 +529,22 @@ struct EditorView: View {
         history.save()
         history.annotations.removeAll { $0.id == id }
         selectedId = nil
+    }
+
+    private func copySelectedAnnotation() {
+        guard let id = selectedId,
+              let ann = history.annotations.first(where: { $0.id == id }) else { return }
+        clipboard = ann
+    }
+
+    private func pasteAnnotation() {
+        guard let source = clipboard else { return }
+        let pasted = source.duplicate(offset: CGSize(width: 20, height: 20))
+        history.save()
+        history.annotations.append(pasted)
+        selectedId = pasted.id
+        // Update clipboard to the pasted copy so successive pastes cascade
+        clipboard = pasted
     }
 
     private func updateCursor(at point: CGPoint) {
