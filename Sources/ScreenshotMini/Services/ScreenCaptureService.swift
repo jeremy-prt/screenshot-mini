@@ -12,6 +12,10 @@ class ScreenCaptureService {
         await capture(arguments: ["-x", "-s"])
     }
 
+    func captureWindow() async {
+        await capture(arguments: ["-x", "-w"])
+    }
+
     func captureOCR() async {
         // Capture area silently
         let tempURL = FileManager.default.temporaryDirectory.appending(path: "ocr_\(UUID().uuidString).png")

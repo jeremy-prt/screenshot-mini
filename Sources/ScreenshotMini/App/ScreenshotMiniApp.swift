@@ -45,11 +45,15 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         mgr.onArea = { [weak self] in
             self?.takeArea()
         }
+        mgr.onWindow = { [weak self] in
+            self?.takeWindow()
+        }
         mgr.onOCR = { [weak self] in
             self?.takeOCR()
         }
         mgr.registerHotkey(.fullscreen)
         mgr.registerHotkey(.area)
+        mgr.registerHotkey(.window)
         mgr.registerHotkey(.ocr)
 
         // If menu bar icon is hidden, open settings on launch so user isn't locked out
@@ -89,6 +93,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         Task { await screenshotService.captureArea() }
     }
 
+    private func takeWindow() {
+        Task { await screenshotService.captureWindow() }
+    }
+
     private func takeOCR() {
         Task { await screenshotService.captureOCR() }
     }
@@ -106,6 +114,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         areaItem.target = self
         if let combo = mgr.areaHotkey { applyKeyEquivalent(combo, to: areaItem) }
         menu.addItem(areaItem)
+
+        let windowItem = NSMenuItem(title: L10n.lang == "en" ? "Capture window" : "Capturer une fenêtre", action: #selector(captureWindowAction), keyEquivalent: "")
+        windowItem.target = self
+        if let combo = mgr.windowHotkey { applyKeyEquivalent(combo, to: windowItem) }
+        menu.addItem(windowItem)
 
         let ocrItem = NSMenuItem(title: L10n.lang == "en" ? "OCR (text capture)" : "OCR (capture texte)", action: #selector(captureOCRAction), keyEquivalent: "")
         ocrItem.target = self
@@ -144,6 +157,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
 
     @objc private func captureFullscreenAction() { takeFullscreen() }
     @objc private func captureAreaAction() { takeArea() }
+    @objc private func captureWindowAction() { takeWindow() }
     @objc private func captureOCRAction() { takeOCR() }
 
     @objc func openSettings() {

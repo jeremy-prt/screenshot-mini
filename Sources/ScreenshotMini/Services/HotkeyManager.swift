@@ -4,12 +4,14 @@ import AppKit
 enum HotkeySlot: String, CaseIterable {
     case fullscreen = "fullscreen"
     case area = "area"
+    case window = "window"
     case ocr = "ocr"
 
     var signature: OSType {
         switch self {
         case .fullscreen: OSType(0x53534D31)
         case .area: OSType(0x53534D32)
+        case .window: OSType(0x53534D34)
         case .ocr: OSType(0x53534D33)
         }
     }
@@ -18,6 +20,7 @@ enum HotkeySlot: String, CaseIterable {
         switch self {
         case .fullscreen: 1
         case .area: 2
+        case .window: 4
         case .ocr: 3
         }
     }
@@ -34,6 +37,9 @@ class HotkeyManager: ObservableObject {
     @Published var areaHotkey: HotkeyCombo? {
         didSet { save(.area); registerHotkey(.area) }
     }
+    @Published var windowHotkey: HotkeyCombo? {
+        didSet { save(.window); registerHotkey(.window) }
+    }
     @Published var ocrHotkey: HotkeyCombo? {
         didSet { save(.ocr); registerHotkey(.ocr) }
     }
@@ -42,6 +48,7 @@ class HotkeyManager: ObservableObject {
 
     var onFullscreen: (() -> Void)?
     var onArea: (() -> Void)?
+    var onWindow: (() -> Void)?
     var onOCR: (() -> Void)?
 
     private var hotkeyRefs: [HotkeySlot: EventHotKeyRef] = [:]
@@ -53,6 +60,7 @@ class HotkeyManager: ObservableObject {
     init() {
         load(.fullscreen)
         load(.area)
+        load(.window)
         load(.ocr)
     }
 
@@ -60,6 +68,7 @@ class HotkeyManager: ObservableObject {
         switch slot {
         case .fullscreen: fullscreenHotkey
         case .area: areaHotkey
+        case .window: windowHotkey
         case .ocr: ocrHotkey
         }
     }
@@ -68,6 +77,7 @@ class HotkeyManager: ObservableObject {
         switch slot {
         case .fullscreen: fullscreenHotkey = combo
         case .area: areaHotkey = combo
+        case .window: windowHotkey = combo
         case .ocr: ocrHotkey = combo
         }
     }
@@ -117,6 +127,7 @@ class HotkeyManager: ObservableObject {
                 case 1: mgr.onFullscreen?()
                 case 2: mgr.onArea?()
                 case 3: mgr.onOCR?()
+                case 4: mgr.onWindow?()
                 default: break
                 }
             }
@@ -186,13 +197,12 @@ class HotkeyManager: ObservableObject {
         let keyCode = UserDefaults.standard.integer(forKey: slot.keyCodeKey)
         let rawMods = UserDefaults.standard.integer(forKey: slot.modifiersKey)
         if rawMods != 0 {
+            let combo = HotkeyCombo(keyCode: keyCode, modifiers: NSEvent.ModifierFlags(rawValue: UInt(rawMods)))
             switch slot {
-            case .fullscreen:
-                fullscreenHotkey = HotkeyCombo(keyCode: keyCode, modifiers: NSEvent.ModifierFlags(rawValue: UInt(rawMods)))
-            case .area:
-                areaHotkey = HotkeyCombo(keyCode: keyCode, modifiers: NSEvent.ModifierFlags(rawValue: UInt(rawMods)))
-            case .ocr:
-                ocrHotkey = HotkeyCombo(keyCode: keyCode, modifiers: NSEvent.ModifierFlags(rawValue: UInt(rawMods)))
+            case .fullscreen: fullscreenHotkey = combo
+            case .area: areaHotkey = combo
+            case .window: windowHotkey = combo
+            case .ocr: ocrHotkey = combo
             }
         }
     }

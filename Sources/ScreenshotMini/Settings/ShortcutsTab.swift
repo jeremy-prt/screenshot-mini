@@ -6,6 +6,7 @@ struct ShortcutsTabView: View {
             Section(L10n.lang == "en" ? "Capture" : "Capture") {
                 HotkeySettingRow(slot: .fullscreen, label: L10n.lang == "en" ? "Full screen" : "Plein écran")
                 HotkeySettingRow(slot: .area, label: L10n.lang == "en" ? "Area capture" : "Capture de zone")
+                HotkeySettingRow(slot: .window, label: L10n.lang == "en" ? "Window capture" : "Capture de fenêtre")
                 HotkeySettingRow(slot: .ocr, label: L10n.lang == "en" ? "Text capture" : "Capture texte")
             }
         }
