@@ -156,7 +156,8 @@ struct EditorView: View {
 
             // Copy
             Button {
-                let img = flattenAnnotations(history.annotations, onto: currentImage, canvasSize: canvasSize)
+                var img = flattenAnnotations(history.annotations, onto: currentImage, canvasSize: canvasSize)
+                if !UserDefaults.standard.bool(forKey: "exportRetina") { img = normalizeImageDPI(img) }
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.writeObjects([img])
                 let en = L10n.lang == "en"

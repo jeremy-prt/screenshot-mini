@@ -19,7 +19,8 @@ func normalizeImageDPI(_ image: NSImage) -> NSImage {
 
 @MainActor
 func saveImage(_ image: NSImage, to savePath: URL) {
-    guard let tiff = image.tiffRepresentation,
+    let exportImage = UserDefaults.standard.bool(forKey: "exportRetina") ? image : normalizeImageDPI(image)
+    guard let tiff = exportImage.tiffRepresentation,
           let bitmap = NSBitmapImageRep(data: tiff) else { return }
     let format = UserDefaults.standard.string(forKey: "imageFormat") ?? "png"
     let (fileType, ext): (NSBitmapImageRep.FileType, String) = switch format {

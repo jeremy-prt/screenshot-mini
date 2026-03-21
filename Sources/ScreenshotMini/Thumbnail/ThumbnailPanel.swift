@@ -441,9 +441,10 @@ class ThumbnailPanel {
     // MARK: - Actions
 
     private func copyToClipboard(image: NSImage) {
+        let exportImage = UserDefaults.standard.bool(forKey: "exportRetina") ? image : normalizeImageDPI(image)
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
-        pasteboard.writeObjects([image])
+        pasteboard.writeObjects([exportImage])
         let en = L10n.lang == "en"
         ToastManager.shared.show(
             title: en ? "Copied!" : "Copié !",
