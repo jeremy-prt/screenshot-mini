@@ -46,7 +46,7 @@ struct SettingsView: View {
             .id(appLanguage) // force refresh when language changes
         }
         .frame(width: 440)
-        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxHeight: 520)
         .tint(brandPurple)
         .onAppear {
             DispatchQueue.main.async {
