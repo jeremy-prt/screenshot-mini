@@ -233,7 +233,8 @@ struct EditorView: View {
                     // Hover highlight
                     if let hId = hoveredId, hId != selectedId,
                        let hAnn = history.annotations.first(where: { $0.id == hId }) {
-                        HoverOverlay(annotation: hAnn).frame(width: dw, height: dh)
+                        HoverOverlay(annotation: hAnn, canvasSize: CGSize(width: dw, height: dh))
+                            .frame(width: dw, height: dh)
                     }
 
                     // Drawing in progress

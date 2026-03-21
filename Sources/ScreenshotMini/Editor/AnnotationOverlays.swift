@@ -5,6 +5,13 @@ import AppKit
 
 struct HoverOverlay: View {
     let annotation: Annotation
+    var canvasSize: CGSize = .zero
+
+    private var rotationAnchor: UnitPoint {
+        guard canvasSize.width > 0 && canvasSize.height > 0 else { return .center }
+        let r = annotation.boundingRect
+        return UnitPoint(x: r.midX / canvasSize.width, y: r.midY / canvasSize.height)
+    }
 
     var body: some View {
         Canvas { ctx, _ in
@@ -13,6 +20,7 @@ struct HoverOverlay: View {
                        style: StrokeStyle(lineWidth: 2, dash: [4, 3]))
         }
         .allowsHitTesting(false)
+        .rotationEffect(.degrees(annotation.rotation), anchor: rotationAnchor)
     }
 }
 
