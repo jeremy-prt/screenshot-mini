@@ -8,19 +8,25 @@ L'app fonctionne, est publiee sur GitHub avec release v1.0.0 et landing page.
 
 - **Capture** : fullscreen, zone, OCR — raccourcis globaux configurables
 - **Preview flottante** : copy, edit, save, pin, drag & drop, swipe dismiss, tooltips, curseur arrow force
-- **Editeur** : crop (avec undo), rectangle, cercle, ligne, fleche (4 styles + courbe Bezier), texte, dessin libre, flou — avec selection, deplacement, resize, undo/redo (⌘Z/⌘⇧Z), delete, fleches clavier, copy/paste (⌘C/⌘V), option-drag duplicate
+- **Editeur** : crop (avec undo), rectangle, cercle, ligne, fleche (4 styles + courbe Bezier), texte, dessin libre, flou — avec selection, deplacement, resize, rotation, undo/redo (⌘Z/⌘⇧Z), delete, fleches clavier, copy/paste (⌘C/⌘V), option-drag duplicate
 - **Editeur UI** : dark mode, toolbar alignee avec traffic lights via NSToolbar unifiedCompact, raccourcis clavier (V/C/R/O/L/A/T/D/B/Esc), tooltips custom avec shortcuts, outil curseur par defaut
+- **Zoom editeur** : pinch trackpad (MagnifyGesture), ⌘+ / ⌘- / ⌘0, ⌘+scroll to zoom, scroll pour panner quand zoom > 1, indicateur % cliquable dans la toolbar
 - **Annotations** : color picker compact (cercle unique + popover preset + custom), slider epaisseur (triangle), fill modes (outline/semi/solid), 4 styles de fleche (outline/thin/filled/double), fleches courbees avec point de controle Bezier
+- **Rotation** : handle `.rotating` positionne au-dessus du bounding box (suit la rotation), curseur fleche circulaire dessine en code (`rotateCursor`)
 - **Outil Flou** : gaussian blur + pixelate via CIFilter, preview en temps reel, rayon et style configurables
-- **Outil Texte** : mode background, resize en direct, pas de duplication pendant l'edition
+- **Outil Texte** : mode background + plain, multiline (Shift+Enter), resize en direct, clic sur annotation selectionnee → re-edition inline, pas de duplication pendant l'edition
 - **Fleches** : 4 styles (outline/thin/filled/double), courbes Bezier avec point de controle
 - **Slider epaisseur** : forme triangle custom
 - **Persistance couleur** : derniere couleur sauvegardee dans UserDefaults
+- **Drag & drop depuis l'editeur** : DragMeButton dans la toolbar, fenetre se ferme apres le drop
 - **Reglages** : 4 onglets (General, Raccourcis, Capture, Sauvegarde), bilingue FR/EN
-- **OCR** : Vision framework, toast avec apercu du texte
-- **Son** de capture, format image configurable, multi-preview ou single
+- **Theme** : System / Light / Dark dans l'onglet General (`appTheme` UserDefaults), applique a l'app entiere
+- **Export resolution** : Retina 2x / Standard 1x dans l'onglet Capture (`exportRetina` UserDefaults), respecte par save, copy et drag & drop
+- **OCR** : Vision framework, langue configurable (FR/EN), toast avec apercu du texte
+- **Son** de capture, format image configurable (PNG/JPEG/TIFF), multi-preview ou single
+- **Toast** : capsule adaptative light/dark selon le theme, animation slide-down entree + fade-out, centree en haut d'ecran
 - **Distribution** : DMG, landing page, guide install, licence MIT
-- **Couleur brand** : violet #9F01A0 utilise dans settings et editeur
+- **Couleur brand** : violet #9F01A0 utilise dans settings, editeur et toasts
 
 ### Ce qui reste a faire / ameliorer
 

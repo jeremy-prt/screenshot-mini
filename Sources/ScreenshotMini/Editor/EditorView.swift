@@ -273,10 +273,9 @@ struct EditorView: View {
             GeometryReader { geo in
                 let imgSize = currentImage.size
                 let fitScale = min(geo.size.width / max(imgSize.width, 1), geo.size.height / max(imgSize.height, 1))
-                let scale = fitScale * zoomLevel
-                let dw = imgSize.width * scale, dh = imgSize.height * scale
-                let ox = (geo.size.width - dw) / 2 + panOffset.width
-                let oy = (geo.size.height - dh) / 2 + panOffset.height
+                let dw = imgSize.width * fitScale, dh = imgSize.height * fitScale
+                let ox = (geo.size.width - dw) / 2
+                let oy = (geo.size.height - dh) / 2
 
                 ZStack(alignment: .topLeading) {
                     Image(nsImage: currentImage).resizable().aspectRatio(contentMode: .fit)
@@ -348,7 +347,8 @@ struct EditorView: View {
                     }
                 }
                 .frame(width: dw, height: dh)
-                .offset(x: ox, y: oy)
+                .scaleEffect(zoomLevel)
+                .offset(x: ox + panOffset.width, y: oy + panOffset.height)
                 .gesture(
                     DragGesture(minimumDistance: 1)
                         .onChanged { v in handleDrag(v, dw: dw, dh: dh, ox: ox, oy: oy) }
@@ -367,20 +367,13 @@ struct EditorView: View {
                     }
                 }
                 .onAppear { canvasSize = CGSize(width: dw, height: dh) }
-                .gesture(
-                    MagnifyGesture()
-                        .onChanged { value in
-                            zoomLevel = max(0.25, min(10, zoomLevel * value.magnification))
-                        }
-                )
                 .background(
-                    ScrollWheelView { dx, dy, isZoom in
-                        if isZoom {
-                            // Pinch zoom on trackpad (sent as scroll with phase)
+                    ScrollWheelView { dx, dy, phase in
+                        if phase == .zoom {
                             let factor = 1.0 + dy * 0.01
                             zoomLevel = max(0.25, min(10, zoomLevel * factor))
-                        } else if zoomLevel > 1.01 {
-                            // Pan when zoomed
+                        } else {
+                            // Always pan with trackpad scroll
                             panOffset.width += dx
                             panOffset.height += dy
                         }

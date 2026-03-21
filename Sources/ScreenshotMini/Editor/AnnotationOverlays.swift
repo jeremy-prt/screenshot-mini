@@ -286,8 +286,10 @@ struct ZoomIndicator: View {
 
 // MARK: - Scroll Wheel View (for pan/zoom via trackpad)
 
+enum ScrollPhase { case scroll, zoom }
+
 struct ScrollWheelView: NSViewRepresentable {
-    let onScroll: (_ dx: CGFloat, _ dy: CGFloat, _ isZoom: Bool) -> Void
+    let onScroll: (_ dx: CGFloat, _ dy: CGFloat, _ phase: ScrollPhase) -> Void
 
     func makeNSView(context: Context) -> ScrollWheelNSView {
         let view = ScrollWheelNSView()
@@ -301,11 +303,21 @@ struct ScrollWheelView: NSViewRepresentable {
 }
 
 final class ScrollWheelNSView: NSView {
-    var onScroll: ((_ dx: CGFloat, _ dy: CGFloat, _ isZoom: Bool) -> Void)?
+    var onScroll: ((_ dx: CGFloat, _ dy: CGFloat, _ phase: ScrollPhase) -> Void)?
 
     override func scrollWheel(with event: NSEvent) {
-        let isZoom = event.modifierFlags.contains(.command)
-        onScroll?(event.scrollingDeltaX, event.scrollingDeltaY, isZoom)
+        // Cmd+scroll = zoom, pinch magnify = zoom (phase changed events)
+        if event.modifierFlags.contains(.command) {
+            onScroll?(event.scrollingDeltaX, event.scrollingDeltaY, .zoom)
+        } else {
+            // Normal two-finger scroll = pan
+            onScroll?(event.scrollingDeltaX, event.scrollingDeltaY, .scroll)
+        }
+    }
+
+    override func magnify(with event: NSEvent) {
+        // Pinch-to-zoom on trackpad
+        onScroll?(0, event.magnification * 100, .zoom)
     }
 }
 
