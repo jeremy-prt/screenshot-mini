@@ -10,7 +10,16 @@ class ToastManager {
     func show(title: String, subtitle: String? = nil) {
         panel?.orderOut(nil)
 
-        let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        let theme = UserDefaults.standard.string(forKey: "appTheme") ?? "system"
+        let isDark: Bool
+        switch theme {
+        case "dark": isDark = true
+        case "light": isDark = false
+        default:
+            // System: read macOS preference directly
+            let style = UserDefaults.standard.string(forKey: "AppleInterfaceStyle")
+            isDark = style == "Dark"
+        }
         let toastView = ToastView(title: title, subtitle: subtitle, isDark: isDark)
         let hostingView = NSHostingView(rootView: toastView)
         hostingView.setFrameSize(hostingView.fittingSize)
@@ -30,7 +39,7 @@ class ToastManager {
         )
         toast.isFloatingPanel = true
         toast.level = .statusBar
-        toast.hasShadow = true
+        toast.hasShadow = false
         toast.isOpaque = false
         toast.backgroundColor = .clear
         toast.contentView = hostingView
@@ -84,9 +93,9 @@ struct ToastView: View {
     let subtitle: String?
     let isDark: Bool
 
-    private var bgColor: Color { isDark ? Color.white : Color.black }
-    private var textColor: Color { isDark ? .black : .white }
-    private var subtitleColor: Color { isDark ? .black.opacity(0.5) : .white.opacity(0.6) }
+    private var bgColor: Color { isDark ? Color(white: 0.2) : .white }
+    private var textColor: Color { isDark ? .white : .black }
+    private var subtitleColor: Color { isDark ? .white.opacity(0.6) : .black.opacity(0.5) }
 
     var body: some View {
         HStack(spacing: 10) {
@@ -94,26 +103,29 @@ struct ToastView: View {
                 .foregroundStyle(brandPurple)
                 .font(.system(size: 18))
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(textColor)
-
-                if let subtitle, !subtitle.isEmpty {
+            if let subtitle, !subtitle.isEmpty {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(title)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(textColor)
                     Text(subtitle)
                         .font(.system(size: 11))
                         .foregroundStyle(subtitleColor)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
                 }
+                .fixedSize()
+            } else {
+                Text(title)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(textColor)
             }
         }
-        .padding(.horizontal, 18)
+        .fixedSize()
+        .padding(.horizontal, 20)
         .padding(.vertical, 12)
         .background(
             Capsule()
-                .fill(bgColor.opacity(0.9))
-                .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
+                .fill(bgColor)
+                .shadow(color: .black.opacity(0.08), radius: 8, y: 2)
         )
     }
 }

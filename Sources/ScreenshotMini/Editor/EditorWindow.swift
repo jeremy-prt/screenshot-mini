@@ -34,7 +34,6 @@ class EditorWindow {
         tb.showsBaselineSeparator = false
         win.toolbar = tb
         win.toolbarStyle = .unifiedCompact
-        win.appearance = NSAppearance(named: .darkAqua)
         win.minSize = NSSize(width: 400, height: 300)
         win.contentView = hostingView
         win.center()

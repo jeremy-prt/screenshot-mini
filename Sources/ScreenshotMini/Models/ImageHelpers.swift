@@ -5,6 +5,18 @@ import CoreImage.CIFilterBuiltins
 
 // MARK: - Save helper
 
+/// Set image DPI to 72 so pixel dimensions match point dimensions (1x, no Retina doubling)
+func normalizeImageDPI(_ image: NSImage) -> NSImage {
+    guard let tiff = image.tiffRepresentation,
+          let bitmap = NSBitmapImageRep(data: tiff) else { return image }
+    let pixelW = bitmap.pixelsWide
+    let pixelH = bitmap.pixelsHigh
+    bitmap.size = NSSize(width: pixelW, height: pixelH)
+    let result = NSImage(size: NSSize(width: pixelW, height: pixelH))
+    result.addRepresentation(bitmap)
+    return result
+}
+
 @MainActor
 func saveImage(_ image: NSImage, to savePath: URL) {
     guard let tiff = image.tiffRepresentation,
