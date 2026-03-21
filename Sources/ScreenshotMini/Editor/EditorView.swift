@@ -510,13 +510,6 @@ struct EditorView: View {
         }
     }
 
-    private var shouldShowFill: Bool {
-        if let sel = selectedAnnotation { return sel.shape == .rect || sel.shape == .circle }
-        return selectedTool == "rect" || selectedTool == "circle"
-    }
-
-    private var isFilled: Bool { selectedAnnotation?.filled ?? annotationFilled }
-
     private var showPropertiesToolbar: Bool {
         if selectedId != nil { return true }
         if let tool = selectedTool, tool != "crop" && tool != "cursor" { return true }
@@ -538,11 +531,6 @@ struct EditorView: View {
                           fontSize: fontSize, arrowStyle: arrowStyle)
     }
 
-    private var isTextContext: Bool {
-        if let sel = selectedAnnotation { return sel.shape == .text }
-        return selectedTool == "text"
-    }
-
     private func commitTextIfNeeded() {
         guard let id = editingTextId else { return }
         if editingText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -558,15 +546,6 @@ struct EditorView: View {
     private func commitTextEdit() {
         commitTextIfNeeded()
         selectedTool = nil
-    }
-
-    private func adjustFontSize(_ delta: CGFloat) {
-        if let id = selectedId, let idx = history.annotations.firstIndex(where: { $0.id == id }) {
-            history.save()
-            history.annotations[idx].fontSize = max(8, min(120, history.annotations[idx].fontSize + delta))
-        } else {
-            fontSize = max(8, min(120, fontSize + delta))
-        }
     }
 
     private func setAnnotationColor(_ color: Color) {
@@ -612,21 +591,4 @@ struct EditorView: View {
         history.annotations[idx].arrowStyle = style
     }
 
-    private func adjustLineWidth(_ delta: CGFloat) {
-        if let id = selectedId, let idx = history.annotations.firstIndex(where: { $0.id == id }) {
-            history.save()
-            history.annotations[idx].lineWidth = max(1, min(20, history.annotations[idx].lineWidth + delta))
-        } else {
-            annotationLineWidth = max(1, min(20, annotationLineWidth + delta))
-        }
-    }
-
-    private func toggleFill() {
-        if let id = selectedId, let idx = history.annotations.firstIndex(where: { $0.id == id }) {
-            history.save()
-            history.annotations[idx].filled.toggle()
-        } else {
-            annotationFilled.toggle()
-        }
-    }
 }

@@ -81,7 +81,7 @@ struct AnnotationView: View {
 
     private func drawArrow(ctx: GraphicsContext, from s: CGPoint, to e: CGPoint) {
         let cp = annotation.controlPoint
-        let hasCurve = cp != nil
+        let hasCurve = cp != nil  // used by drawFilledArrow
 
         // Tangent angle at the end point (for arrowhead direction)
         let angle: CGFloat
@@ -101,18 +101,18 @@ struct AnnotationView: View {
 
         switch annotation.arrowStyle {
         case .thin:
-            drawThinArrow(ctx: ctx, from: s, to: e, cp: cp, angle: angle, hasCurve: hasCurve)
+            drawThinArrow(ctx: ctx, from: s, to: e, cp: cp, angle: angle)
         case .outline:
-            drawOutlineArrow(ctx: ctx, from: s, to: e, cp: cp, angle: angle, hasCurve: hasCurve)
+            drawOutlineArrow(ctx: ctx, from: s, to: e, cp: cp, angle: angle)
         case .filled:
             drawFilledArrow(ctx: ctx, from: s, to: e, cp: cp, angle: angle, hasCurve: hasCurve)
         case .double:
-            drawDoubleArrow(ctx: ctx, from: s, to: e, cp: cp, endAngle: angle, startAngle: startAngle, hasCurve: hasCurve)
+            drawDoubleArrow(ctx: ctx, from: s, to: e, cp: cp, endAngle: angle, startAngle: startAngle)
         }
     }
 
     /// Thin arrow: simple line + arrowhead lines (original style)
-    private func drawThinArrow(ctx: GraphicsContext, from s: CGPoint, to e: CGPoint, cp: CGPoint?, angle: CGFloat, hasCurve: Bool) {
+    private func drawThinArrow(ctx: GraphicsContext, from s: CGPoint, to e: CGPoint, cp: CGPoint?, angle: CGFloat) {
         // Shaft
         var shaft = Path()
         shaft.move(to: s)
@@ -134,7 +134,7 @@ struct AnnotationView: View {
     }
 
     /// Outline arrow: stroked triangular arrowhead + shaft line
-    private func drawOutlineArrow(ctx: GraphicsContext, from s: CGPoint, to e: CGPoint, cp: CGPoint?, angle: CGFloat, hasCurve: Bool) {
+    private func drawOutlineArrow(ctx: GraphicsContext, from s: CGPoint, to e: CGPoint, cp: CGPoint?, angle: CGFloat) {
         let hl: CGFloat = 20, ha: CGFloat = .pi / 6
 
         // Arrowhead triangle (stroked, not filled)
@@ -247,7 +247,7 @@ struct AnnotationView: View {
     }
 
     /// Double arrow: arrowheads on both ends
-    private func drawDoubleArrow(ctx: GraphicsContext, from s: CGPoint, to e: CGPoint, cp: CGPoint?, endAngle: CGFloat, startAngle: CGFloat, hasCurve: Bool) {
+    private func drawDoubleArrow(ctx: GraphicsContext, from s: CGPoint, to e: CGPoint, cp: CGPoint?, endAngle: CGFloat, startAngle: CGFloat) {
         // Shaft
         var shaft = Path()
         shaft.move(to: s)
