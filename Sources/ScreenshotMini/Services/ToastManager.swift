@@ -19,7 +19,7 @@ class ToastManager {
 
         guard let screen = NSScreen.main else { return }
         let x = screen.frame.midX - width / 2
-        let y = screen.visibleFrame.maxY - height - 20
+        let y = screen.visibleFrame.maxY - height - 60
 
         let toast = NSPanel(
             contentRect: NSRect(x: x, y: y, width: width, height: height),
@@ -73,7 +73,7 @@ struct ToastView: View {
         VStack(spacing: 4) {
             HStack(spacing: 8) {
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
+                    .foregroundStyle(brandPurple)
                     .font(.system(size: 16))
                 Text(title)
                     .font(.system(size: 13, weight: .medium))

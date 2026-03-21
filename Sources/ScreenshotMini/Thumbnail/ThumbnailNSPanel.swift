@@ -75,4 +75,18 @@ final class ThumbnailNSPanel: NSPanel, NSDraggingSource, @unchecked Sendable {
 
         contentView.beginDraggingSession(with: [dragItem], event: event, source: self)
     }
+
+    nonisolated func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
+        Task { @MainActor in
+            if operation != [] {
+                // Successful drop — dismiss panel, show toast
+                self.orderOut(nil)
+                let en = L10n.lang == "en"
+                ToastManager.shared.show(
+                    title: en ? "Exported!" : "Exporté !",
+                    subtitle: en ? "Image dropped successfully" : "Image déposée avec succès"
+                )
+            }
+        }
+    }
 }
