@@ -4,17 +4,48 @@ import AppKit
 // MARK: - Custom rotate cursor
 
 @MainActor private let rotateCursor: NSCursor = {
-    let config = NSImage.SymbolConfiguration(pointSize: 16, weight: .medium)
-    if let sfImage = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: nil)?
-        .withSymbolConfiguration(config) {
-        let size = NSSize(width: 22, height: 22)
-        let rendered = NSImage(size: size)
-        rendered.lockFocus()
-        sfImage.draw(in: NSRect(origin: .zero, size: size))
-        rendered.unlockFocus()
-        return NSCursor(image: rendered, hotSpot: NSPoint(x: 11, y: 11))
+    let size: CGFloat = 22
+    let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
+        guard let ctx = NSGraphicsContext.current?.cgContext else { return false }
+        let center = CGPoint(x: size / 2, y: size / 2)
+        let radius: CGFloat = 7
+
+        // White outline
+        ctx.setStrokeColor(NSColor.white.cgColor)
+        ctx.setLineWidth(3.5)
+        ctx.setLineCap(.round)
+        ctx.addArc(center: center, radius: radius, startAngle: .pi * 0.3, endAngle: .pi * 1.7, clockwise: false)
+        ctx.strokePath()
+
+        // Black arc
+        ctx.setStrokeColor(NSColor.black.cgColor)
+        ctx.setLineWidth(1.8)
+        ctx.addArc(center: center, radius: radius, startAngle: .pi * 0.3, endAngle: .pi * 1.7, clockwise: false)
+        ctx.strokePath()
+
+        // Arrowhead at end
+        let tipAngle: CGFloat = .pi * 1.7
+        let tip = CGPoint(x: center.x + radius * cos(tipAngle), y: center.y + radius * sin(tipAngle))
+        // White outline
+        ctx.setStrokeColor(NSColor.white.cgColor)
+        ctx.setLineWidth(3.5)
+        ctx.move(to: tip)
+        ctx.addLine(to: CGPoint(x: tip.x + 4, y: tip.y + 1))
+        ctx.move(to: tip)
+        ctx.addLine(to: CGPoint(x: tip.x - 1, y: tip.y + 5))
+        ctx.strokePath()
+        // Black arrow
+        ctx.setStrokeColor(NSColor.black.cgColor)
+        ctx.setLineWidth(1.8)
+        ctx.move(to: tip)
+        ctx.addLine(to: CGPoint(x: tip.x + 4, y: tip.y + 1))
+        ctx.move(to: tip)
+        ctx.addLine(to: CGPoint(x: tip.x - 1, y: tip.y + 5))
+        ctx.strokePath()
+
+        return true
     }
-    return NSCursor.crosshair
+    return NSCursor(image: image, hotSpot: NSPoint(x: size / 2, y: size / 2))
 }()
 
 // MARK: - Editor View
@@ -474,15 +505,7 @@ struct EditorView: View {
     }
 
     private func handleDoubleTap(_ location: CGPoint, dw: CGFloat, dh: CGFloat, ox: CGFloat, oy: CGFloat) {
-        let pt = canvasPoint(location, dw: dw, dh: dh, ox: ox, oy: oy)
-        // Double-click on text → enter edit mode
-        if let hit = history.annotations.last(where: { $0.hitTest(pt) }),
-           hit.shape == .text, editingTextId == nil {
-            selectedId = hit.id
-            editingTextId = hit.id
-            editingText = hit.text
-            selectedTool = "cursor"
-        }
+        // Not used currently — edit is triggered by clicking an already-selected text
     }
 
     private func handleTap(_ location: CGPoint, dw: CGFloat, dh: CGFloat, ox: CGFloat, oy: CGFloat) {
@@ -514,13 +537,16 @@ struct EditorView: View {
             return
         }
 
-        // Single click on text: just select it (don't enter edit mode)
-        // Edit mode is triggered by double-click (see onTapGesture count:2 below)
-
         commitTextIfNeeded()
 
         // Try to select an annotation under the click
         if let hit = history.annotations.last(where: { $0.hitTest(pt) }) {
+            // If clicking on an already-selected text → enter edit mode
+            if hit.id == selectedId && hit.shape == .text && editingTextId == nil {
+                editingTextId = hit.id
+                editingText = hit.text
+                return
+            }
             selectedId = hit.id
             selectedTool = "cursor"
         } else if selectedTool != "crop" {
