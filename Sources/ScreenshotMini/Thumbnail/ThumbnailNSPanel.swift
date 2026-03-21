@@ -56,7 +56,7 @@ final class ThumbnailNSPanel: NSPanel, NSDraggingSource, @unchecked Sendable {
         guard let image = dragImage, let contentView else { return }
 
         let tempURL = FileManager.default.temporaryDirectory
-            .appendingPathComponent("Screenshot_drag.png")
+            .appendingPathComponent(uniqueDragFilename())
         if let tiff = image.tiffRepresentation,
            let bitmap = NSBitmapImageRep(data: tiff),
            let png = bitmap.representation(using: .png, properties: [:]) {

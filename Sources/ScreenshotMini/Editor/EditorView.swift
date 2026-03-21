@@ -159,7 +159,12 @@ struct EditorView: View {
                 let img = flattenAnnotations(history.annotations, onto: currentImage, canvasSize: canvasSize)
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.writeObjects([img])
-                ToastManager.shared.show(message: L10n.lang == "en" ? "Copied!" : "Copié !")
+                let en = L10n.lang == "en"
+                ToastManager.shared.show(
+                    title: en ? "Copied!" : "Copié !",
+                    subtitle: en ? "Image copied to clipboard" : "Image copiée dans le presse-papier"
+                )
+                onClose()
             } label: {
                 Image(systemName: "doc.on.doc").font(.system(size: 13)).frame(width: 28, height: 28)
             }.buttonStyle(.plain).help("Copy")

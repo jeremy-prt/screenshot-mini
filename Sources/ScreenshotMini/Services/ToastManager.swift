@@ -7,19 +7,19 @@ class ToastManager {
 
     private var panel: NSPanel?
 
-    func show(message: String, preview: String? = nil) {
+    func show(title: String, subtitle: String? = nil) {
         panel?.orderOut(nil)
 
-        let toastView = ToastView(message: message, preview: preview)
+        let toastView = ToastView(title: title, subtitle: subtitle)
         let hostingView = NSHostingView(rootView: toastView)
         hostingView.setFrameSize(hostingView.fittingSize)
 
-        let width = max(hostingView.fittingSize.width, 200)
+        let width = max(hostingView.fittingSize.width + 8, 180)
         let height = hostingView.fittingSize.height
 
         guard let screen = NSScreen.main else { return }
         let x = screen.frame.midX - width / 2
-        let y = screen.visibleFrame.maxY - height - 12
+        let y = screen.visibleFrame.maxY - height - 20
 
         let toast = NSPanel(
             contentRect: NSRect(x: x, y: y, width: width, height: height),
@@ -58,11 +58,16 @@ class ToastManager {
             }
         }
     }
+
+    // Legacy support
+    func show(message: String, preview: String? = nil) {
+        show(title: message, subtitle: preview)
+    }
 }
 
 struct ToastView: View {
-    let message: String
-    let preview: String?
+    let title: String
+    let subtitle: String?
 
     var body: some View {
         VStack(spacing: 4) {
@@ -70,18 +75,18 @@ struct ToastView: View {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
                     .font(.system(size: 16))
-                Text(message)
+                Text(title)
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white)
             }
 
-            if let preview, !preview.isEmpty {
-                Text(preview)
+            if let subtitle, !subtitle.isEmpty {
+                Text(subtitle)
                     .font(.system(size: 11))
                     .foregroundStyle(.white.opacity(0.6))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: 280)
+                    .lineLimit(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: 400)
             }
         }
         .padding(.horizontal, 16)

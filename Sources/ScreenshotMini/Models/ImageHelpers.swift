@@ -18,8 +18,18 @@ func saveImage(_ image: NSImage, to savePath: URL) {
     let props: [NSBitmapImageRep.PropertyKey: Any] = fileType == .jpeg ? [.compressionFactor: 0.9] : [:]
     guard let data = bitmap.representation(using: fileType, properties: props) else { return }
     let filename = "Screenshot_\(DateFormatter.yyyyMMdd_HHmmss.string(from: Date())).\(ext)"
-    try? data.write(to: savePath.appending(path: filename))
-    ToastManager.shared.show(message: L10n.lang == "en" ? "Saved!" : "Sauvegardé !")
+    let fullPath = savePath.appending(path: filename)
+    try? data.write(to: fullPath)
+    let en = L10n.lang == "en"
+    ToastManager.shared.show(
+        title: en ? "Saved!" : "Sauvegardé !",
+        subtitle: en ? "Saved to \(fullPath.lastPathComponent)" : "Sauvegardé dans \(fullPath.lastPathComponent)"
+    )
+}
+
+/// Generate a unique filename for temporary drag files
+func uniqueDragFilename() -> String {
+    "Screenshot_\(DateFormatter.yyyyMMdd_HHmmss.string(from: Date()))_\(UUID().uuidString.prefix(6)).png"
 }
 
 extension DateFormatter {

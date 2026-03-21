@@ -444,6 +444,11 @@ class ThumbnailPanel {
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.writeObjects([image])
+        let en = L10n.lang == "en"
+        ToastManager.shared.show(
+            title: en ? "Copied!" : "Copié !",
+            subtitle: en ? "Image copied to clipboard" : "Image copiée dans le presse-papier"
+        )
     }
 
     private func saveToDisk(image: NSImage) {
@@ -475,5 +480,10 @@ class ThumbnailPanel {
         let url = savePath.appending(path: filename)
 
         try? data.write(to: url)
+        let en = L10n.lang == "en"
+        ToastManager.shared.show(
+            title: en ? "Saved!" : "Sauvegardé !",
+            subtitle: en ? "Saved to \(filename)" : "Sauvegardé dans \(filename)"
+        )
     }
 }

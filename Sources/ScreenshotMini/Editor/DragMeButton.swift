@@ -74,8 +74,8 @@ final class DragMeNSView: NSView, NSDraggingSource {
         guard hypot(c.x - sp.x, c.y - sp.y) > 4 else { return }
         dragStarted = true
 
-        // Write temp PNG
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("Screenshot_drag.png")
+        // Write temp PNG with unique name
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(uniqueDragFilename())
         if let t = image.tiffRepresentation,
            let b = NSBitmapImageRep(data: t),
            let d = b.representation(using: .png, properties: [:]) {
@@ -103,9 +103,21 @@ final class DragMeNSView: NSView, NSDraggingSource {
 
     nonisolated func draggingSession(_ session: NSDraggingSession, endedAt screenPoint: NSPoint, operation: NSDragOperation) {
         Task { @MainActor in
-            // Restore window after drag
-            if let win = NSApp.windows.first(where: { $0.title == "Screenshot Mini" }) {
-                win.makeKeyAndOrderFront(nil)
+            if operation != [] {
+                // Successful drop — close editor, show toast
+                if let win = NSApp.windows.first(where: { $0.title == "Screenshot Mini" }) {
+                    win.close()
+                }
+                let en = L10n.lang == "en"
+                ToastManager.shared.show(
+                    title: en ? "Exported!" : "Exporté !",
+                    subtitle: en ? "Image dropped successfully" : "Image déposée avec succès"
+                )
+            } else {
+                // Cancelled — restore window
+                if let win = NSApp.windows.first(where: { $0.title == "Screenshot Mini" }) {
+                    win.makeKeyAndOrderFront(nil)
+                }
             }
         }
     }
