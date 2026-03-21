@@ -25,4 +25,9 @@ class AnnotationHistory: ObservableObject {
 
     var canUndo: Bool { !undoStack.isEmpty }
     var canRedo: Bool { !redoStack.isEmpty }
+
+    func clearStacks() {
+        undoStack.removeAll()
+        redoStack.removeAll()
+    }
 }

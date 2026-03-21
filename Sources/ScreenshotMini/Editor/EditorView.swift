@@ -429,13 +429,15 @@ struct EditorView: View {
         guard let s = cropStart, let e = cropEnd else { return }
         let rect = normalizedRect(from: s, to: e)
         guard rect.width > 5 && rect.height > 5 else { return }
-        // Save state for undo
+        // Save full state for undo (image + annotations + their undo stacks)
         imageUndoStack.append((currentImage, history.annotations))
         if !history.annotations.isEmpty {
             currentImage = flattenAnnotations(history.annotations, onto: currentImage, canvasSize: canvasSize)
             history.annotations.removeAll()
         }
         currentImage = cropImage(currentImage, to: rect, canvasSize: canvasSize)
+        // Clear annotation history — crop is a destructive operation, undo goes through imageUndoStack
+        history.clearStacks()
         cropStart = nil; cropEnd = nil; interaction = .none
     }
 
