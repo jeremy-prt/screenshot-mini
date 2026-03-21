@@ -72,6 +72,15 @@ if [ -f "$DMG_OUTPUT" ]; then
     echo ""
     echo "DMG created: $DMG_OUTPUT"
     echo "  open $DMG_OUTPUT"
+
+    # Sign with Sparkle EdDSA for auto-update
+    if [ -f "Frameworks/sign_update" ]; then
+        echo ""
+        echo "Sparkle EdDSA signature:"
+        ./Frameworks/sign_update "$DMG_OUTPUT"
+        echo ""
+        echo "Copy the sparkle:edSignature and length into docs/appcast.xml"
+    fi
 else
     echo "ERROR: DMG creation failed"
     exit 1

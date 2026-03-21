@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>Screenshot Mini Updates</title>
+        <language>en</language>
+        <item>
+            <title>Version 1.1.0</title>
+            <sparkle:version>2</sparkle:version>
+            <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>What's New in v1.1.0</h2>
+                <ul>
+                    <li>🎨 Background tool — gradient or solid color behind screenshots with padding, rounded corners, and shadow</li>
+                    <li>🪟 Window capture — capture a specific window with configurable shortcut</li>
+                    <li>📤 Share button — share from the editor via AirDrop, Messages, Mail, etc.</li>
+                    <li>📋 Capture history — floating panel with thumbnail grid, hover actions, drag & drop</li>
+                    <li>🔢 Numbered annotations — click to place numbered circles (1, 2, 3...)</li>
+                    <li>💾 ⌘S save-as dialog — choose where to save from the editor</li>
+                    <li>✨ Toolbar hover effects on all buttons</li>
+                </ul>
+            ]]></description>
+            <pubDate>Sat, 21 Mar 2026 18:00:00 +0100</pubDate>
+            <enclosure
+                url="https://github.com/jeremy-prt/screenshot-mini/releases/download/v1.1.0/ScreenshotMini.dmg"
+                sparkle:edSignature="SIGNATURE_PLACEHOLDER"
+                length="0"
+                type="application/octet-stream"
+            />
+        </item>
+    </channel>
+</rss>

@@ -10,7 +10,14 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "ScreenshotMini",
-            path: "Sources/ScreenshotMini"
+            path: "Sources/ScreenshotMini",
+            swiftSettings: [
+                .unsafeFlags(["-F", "Frameworks"])
+            ],
+            linkerSettings: [
+                .unsafeFlags(["-F", "Frameworks", "-framework", "Sparkle",
+                              "-Xlinker", "-rpath", "-Xlinker", "@executable_path/../Frameworks"])
+            ]
         )
     ]
 )

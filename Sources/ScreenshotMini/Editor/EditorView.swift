@@ -150,9 +150,9 @@ struct EditorView: View {
     ]
 
     var body: some View {
-        VStack(spacing: 0) {
-            toolbar
-            canvas
+        ZStack(alignment: .top) {
+            canvas.padding(.top, 38)
+            toolbar.zIndex(1)
         }
         .ignoresSafeArea()
         .background(
@@ -239,18 +239,18 @@ struct EditorView: View {
             Button { zoomOut() } label: {
                 Image(systemName: "minus.magnifyingglass").font(.system(size: 12))
                     .frame(width: 24, height: 28)
-            }.buttonStyle(.plain).background(NativeTooltip(tooltip: "Zoom out (⌘-)"))
+            }.buttonStyle(.plain).toolbarHover().background(NativeTooltip(tooltip: "Zoom out (⌘-)"))
 
             Button { zoomReset() } label: {
                 Text("\(Int(zoomLevel * 100))%")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                     .frame(minWidth: 36, minHeight: 28)
-            }.buttonStyle(.plain).background(NativeTooltip(tooltip: "Reset zoom (⌘0)"))
+            }.buttonStyle(.plain).toolbarHover().background(NativeTooltip(tooltip: "Reset zoom (⌘0)"))
 
             Button { zoomIn() } label: {
                 Image(systemName: "plus.magnifyingglass").font(.system(size: 12))
                     .frame(width: 24, height: 28)
-            }.buttonStyle(.plain).background(NativeTooltip(tooltip: "Zoom in (⌘+)"))
+            }.buttonStyle(.plain).toolbarHover().background(NativeTooltip(tooltip: "Zoom in (⌘+)"))
 
             Divider().frame(height: 18).padding(.horizontal, 2)
 
@@ -268,7 +268,7 @@ struct EditorView: View {
                 onClose()
             } label: {
                 Image(systemName: "doc.on.doc").font(.system(size: 13)).frame(width: 28, height: 28)
-            }.buttonStyle(.plain).help(L10n.editorCopy)
+            }.buttonStyle(.plain).toolbarHover().help(L10n.editorCopy)
 
             // Share
             ShareButton {

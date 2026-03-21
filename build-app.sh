@@ -13,9 +13,15 @@ echo "Creating app bundle..."
 rm -rf "$BUILD_DIR"
 mkdir -p "$APP_BUNDLE/Contents/MacOS"
 mkdir -p "$APP_BUNDLE/Contents/Resources"
+mkdir -p "$APP_BUNDLE/Contents/Frameworks"
 
 # Copy binary
 cp .build/release/ScreenshotMini "$APP_BUNDLE/Contents/MacOS/ScreenshotMini"
+
+# Copy Sparkle framework
+if [ -d "Frameworks/Sparkle.framework" ]; then
+    cp -R Frameworks/Sparkle.framework "$APP_BUNDLE/Contents/Frameworks/Sparkle.framework"
+fi
 
 # Copy icons
 if [ -f "Resources/AppIcon.icns" ]; then
@@ -38,9 +44,9 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << 'PLIST'
     <key>CFBundleDisplayName</key>
     <string>Screenshot Mini</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>2</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.0</string>
+    <string>1.1.0</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleExecutable</key>
@@ -51,6 +57,12 @@ cat > "$APP_BUNDLE/Contents/Info.plist" << 'PLIST'
     <true/>
     <key>LSMinimumSystemVersion</key>
     <string>15.0</string>
+    <key>SUPublicEDKey</key>
+    <string>4NnmxyV0FR0GIFCf0hShB1k4vSkYsl5D55knxLeopgQ=</string>
+    <key>SUFeedURL</key>
+    <string>https://jeremy-prt.github.io/screenshot-mini/appcast.xml</string>
+    <key>SUScheduledCheckInterval</key>
+    <integer>86400</integer>
 </dict>
 </plist>
 PLIST
@@ -66,6 +78,9 @@ if [ -d "$INSTALLED" ]; then
     # Copy and re-sign with same stable certificate to preserve TCC permissions
     cp "$APP_BUNDLE/Contents/MacOS/ScreenshotMini" "$INSTALLED/Contents/MacOS/ScreenshotMini"
     cp "$APP_BUNDLE/Contents/Info.plist" "$INSTALLED/Contents/Info.plist"
+    mkdir -p "$INSTALLED/Contents/Frameworks"
+    rm -rf "$INSTALLED/Contents/Frameworks/Sparkle.framework"
+    cp -R "$APP_BUNDLE/Contents/Frameworks/Sparkle.framework" "$INSTALLED/Contents/Frameworks/Sparkle.framework" 2>/dev/null || true
     codesign --force --deep -s "ScreenshotMini Dev" "$INSTALLED"
     xattr -cr "$INSTALLED" 2>/dev/null || true
     echo "Updated. Relaunching..."

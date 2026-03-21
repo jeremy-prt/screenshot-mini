@@ -1,4 +1,5 @@
 import SwiftUI
+import Sparkle
 
 @main
 struct ScreenshotMiniApp: App {
@@ -18,8 +19,12 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     let screenshotService = ScreenCaptureService()
 
     private var menuBarObserver: NSObjectProtocol?
+    private var updaterController: SPUStandardUpdaterController!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Sparkle auto-updater
+        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+
         UserDefaults.standard.register(defaults: ["dismissDelay": 5.0, "playSound": true, "showMenuBarIcon": true, "appTheme": "system", "exportRetina": true])
         applyTheme(UserDefaults.standard.string(forKey: "appTheme") ?? "system")
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -137,6 +142,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         if let combo = mgr.combo(for: .history) { applyKeyEquivalent(combo, to: historyItem) }
         menu.addItem(historyItem)
 
+        let updateItem = NSMenuItem(title: L10n.lang == "en" ? "Check for Updates…" : "Vérifier les mises à jour…", action: #selector(checkForUpdatesAction), keyEquivalent: "")
+        updateItem.target = self
+        updateItem.image = NSImage(systemSymbolName: "arrow.triangle.2.circlepath", accessibilityDescription: nil)
+        menu.addItem(updateItem)
+
         let settingsItem = NSMenuItem(title: L10n.menuSettings, action: #selector(openSettings), keyEquivalent: "")
         settingsItem.target = self
         settingsItem.image = NSImage(systemSymbolName: "gearshape", accessibilityDescription: nil)
@@ -170,6 +180,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     @objc private func captureWindowAction() { takeWindow() }
     @objc private func captureOCRAction() { takeOCR() }
     @objc private func openHistoryAction() { HistoryWindow.shared.toggle() }
+    @objc private func checkForUpdatesAction() { updaterController.checkForUpdates(nil) }
 
     @objc func openSettings() {
         if let window = settingsWindow, window.isVisible {

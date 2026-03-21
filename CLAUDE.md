@@ -70,7 +70,12 @@ Resources/
 ├── AppIcon.icns               # Icone app
 ├── menubar-icon.png           # Icone menu bar (template noir)
 ├── icon.png                   # Logo source
-docs/                          # Landing page + guide install
+Frameworks/
+├── Sparkle.framework          # Sparkle 2.9.0 auto-update framework
+├── sign_update                # EdDSA signature tool for DMGs
+├── generate_appcast           # Appcast XML generator
+└── generate_keys              # EdDSA key pair generator
+docs/                          # Landing page + guide install + appcast.xml
 ```
 
 ## Fonctionnalites
@@ -172,6 +177,8 @@ bash build-dmg.sh   # compile + re-signe ad-hoc + cree .dmg pour distribution
 - Export Retina : `exportRetina` UserDefaults bool → `normalizeImageDPI()` pour downscale 1x ; s'applique au save (ThumbnailPanel, ImageHelpers) et au copy (EditorView)
 - Theme : `appTheme` UserDefaults string ("system"/"light"/"dark") → `applyTheme()` dans GeneralTab ; lu aussi par ToastManager pour la couleur du toast
 - Background tool : preview via `scaleEffect(bgShrink)` sur le canvas interne (dw/dh stables, annotations ne bougent pas), background gradient/couleur dans un ZStack parent de taille dw x dh. Export via `renderWithBackground()` qui utilise `NSImage(size:flipped:drawingHandler:)`. `canvasPoint` combine `bgShrink * zoomLevel` en un seul effectiveZoom
+- Auto-update : Sparkle 2.9.0 (framework manuel, pas SPM binary target). Cle EdDSA dans le Keychain, public key dans Info.plist (`SUPublicEDKey`). Feed URL : GitHub Pages (`docs/appcast.xml`). DMGs sur GitHub Releases, signes avec `sign_update`. Check auto toutes les 24h + menu "Verifier les mises a jour". Localise FR/EN nativement par Sparkle
+- Layout editeur : ZStack(toolbar zIndex 1 + canvas padding top 38) au lieu de VStack, pour que le zoom ne bloque pas la toolbar
 
 ## TODO
 
@@ -205,5 +212,6 @@ bash build-dmg.sh   # compile + re-signe ad-hoc + cree .dmg pour distribution
 - [x] Historique des captures (NSPanel, grille thumbnails, max 12, clean on launch, drag & drop)
 - [x] Annotations numerotees (cercles 1, 2, 3... click to place)
 - [x] ⌘S save-as dialog (NSSavePanel)
+- [x] Auto-update via Sparkle 2.9.0 (EdDSA, appcast GitHub Pages, DMGs GitHub Releases)
 - [ ] Curseurs de resize specifiques par handle (↔ ↕ etc.) — actuellement crosshair generique
 - [ ] Refaire AppIcon.icns avec le logo app fond violet
