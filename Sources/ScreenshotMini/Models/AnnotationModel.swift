@@ -6,6 +6,13 @@ enum AnnotationShape: Equatable, Sendable {
     case rect, circle, line, arrow, text, freehand
 }
 
+// MARK: - Resize handle
+
+enum ResizeHandle: Equatable {
+    case topLeft, topRight, bottomLeft, bottomRight
+    case startPoint, endPoint
+}
+
 // MARK: - Single annotation
 
 struct Annotation: Identifiable, Equatable {
@@ -132,40 +139,4 @@ struct Annotation: Identifiable, Equatable {
             points[i].y += delta.height
         }
     }
-}
-
-// MARK: - Resize handle
-
-enum ResizeHandle: Equatable {
-    case topLeft, topRight, bottomLeft, bottomRight
-    case startPoint, endPoint
-}
-
-// MARK: - Undo manager
-
-@MainActor
-class AnnotationHistory: ObservableObject {
-    @Published var annotations: [Annotation] = []
-    private var undoStack: [[Annotation]] = []
-    private var redoStack: [[Annotation]] = []
-
-    func save() {
-        undoStack.append(annotations)
-        redoStack.removeAll()
-    }
-
-    func undo() {
-        guard let prev = undoStack.popLast() else { return }
-        redoStack.append(annotations)
-        annotations = prev
-    }
-
-    func redo() {
-        guard let next = redoStack.popLast() else { return }
-        undoStack.append(annotations)
-        annotations = next
-    }
-
-    var canUndo: Bool { !undoStack.isEmpty }
-    var canRedo: Bool { !redoStack.isEmpty }
 }
