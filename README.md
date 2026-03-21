@@ -1,7 +1,7 @@
-# Screenshot Mini
+# Orby
 
 <p align="center">
-  <img src="docs/screenshot.jpeg" width="600" alt="Screenshot Mini">
+  <img src="docs/screenshot.jpeg" width="600" alt="Orby">
 </p>
 
 A lightweight macOS menu bar screenshot app inspired by CleanShot X — simpler, faster, free.
@@ -22,9 +22,9 @@ Available in **English** and **French**.
 
 ## Download
 
-Grab the latest `.dmg` from the [Releases](https://github.com/jeremy-prt/screenshot-mini/releases) page.
+Grab the latest `.dmg` from the [Releases](https://github.com/jeremy-prt/orby/releases) page.
 
-Or visit the [landing page](https://jeremy-prt.github.io/screenshot-mini/) for more info.
+Or visit the [landing page](https://jeremy-prt.github.io/orby/) for more info.
 
 ## Install
 
@@ -42,13 +42,13 @@ Or visit the [landing page](https://jeremy-prt.github.io/screenshot-mini/) for m
 Requires **macOS 26+** and **Xcode 26+** (Swift 6.2).
 
 ```bash
-git clone git@github.com:jeremy-prt/screenshot-mini.git
-cd screenshot-mini
+git clone git@github.com:jeremy-prt/orby.git
+cd orby
 bash build-app.sh      # Build the .app bundle
 # bash build-dmg.sh    # Build the .dmg installer (requires create-dmg)
 ```
 
-The app bundle will be at `.build/app/Screenshot Mini.app`.
+The app bundle will be at `.build/app/Orby.app`.
 
 ## How it works
 
