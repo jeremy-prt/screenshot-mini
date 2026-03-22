@@ -29,6 +29,8 @@ Download the `.dmg` from [Releases](https://github.com/jeremy-prt/orby/releases)
 
 Requires **macOS 15 (Sequoia)** or later.
 
+> **Note:** The app is not signed with an Apple Developer certificate. As a student, I can't afford the $99/year fee. macOS will ask you to allow the app on first launch (System Settings → Privacy & Security → Open Anyway). The entire source code is available here for review.
+
 ## Build from source
 
 ```bash
