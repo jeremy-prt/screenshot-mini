@@ -60,7 +60,7 @@ struct AboutTabView: View {
 
                 // Check for updates button
             Button {
-                SPUStandardUpdaterController(startingUpdater: false, updaterDelegate: nil, userDriverDelegate: nil).checkForUpdates(nil)
+                AppDelegate.updaterController?.checkForUpdates(nil)
             } label: {
                 Label(L10n.tr4("Check for Updates…", "Vérifier les mises à jour…", "Buscar actualizaciones…", "Nach Updates suchen…"),
                       systemImage: "arrow.triangle.2.circlepath")

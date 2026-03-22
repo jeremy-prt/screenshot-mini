@@ -5,7 +5,7 @@ APP_NAME="Orby"
 BUILD_DIR=".build"
 APP_BUNDLE="$BUILD_DIR/app/$APP_NAME.app"
 DMG_OUTPUT="$BUILD_DIR/Orby.dmg"
-BG_IMAGE="$BUILD_DIR/dmg-bg.png"
+BG_IMAGE="Resources/dmg-bg.png"
 
 # Step 1: Build the app
 echo "Building app..."
@@ -15,25 +15,8 @@ bash build-app.sh
 echo "Re-signing for distribution (ad-hoc)..."
 codesign --force --deep -s - "$APP_BUNDLE"
 
-# Step 2: Generate DMG background if not exists
-if [ ! -f "$BG_IMAGE" ]; then
-    echo "Generating DMG background..."
-    python3 -c "
-from PIL import Image, ImageDraw, ImageFont
-import sys
-
-try:
-    w, h = 600, 400
-    img = Image.new('RGBA', (w*2, h*2), (250, 249, 247, 255))
-    draw = ImageDraw.Draw(img)
-    # Arrow from app icon to Applications
-    draw.text((w-40, h+40), '→', fill=(180,180,180,255))
-    img.save('$BG_IMAGE')
-except:
-    # Fallback: just create a simple bg
-    pass
-" 2>/dev/null || echo "  (bg generation skipped, using default)"
-fi
+# Step 2: DMG background
+# Uses Resources/dmg-bg.png (drag to install arrow)
 
 # Step 3: Create DMG
 echo "Creating DMG..."

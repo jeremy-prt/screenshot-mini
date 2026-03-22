@@ -19,11 +19,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     let screenshotService = ScreenCaptureService()
 
     private var menuBarObserver: NSObjectProtocol?
-    private var updaterController: SPUStandardUpdaterController!
+    static var updaterController: SPUStandardUpdaterController!
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Sparkle auto-updater
-        updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+        AppDelegate.updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
 
         UserDefaults.standard.register(defaults: ["dismissDelay": 20.0, "playSound": true, "showMenuBarIcon": true, "appTheme": "system", "exportRetina": true])
         applyTheme(UserDefaults.standard.string(forKey: "appTheme") ?? "system")
@@ -180,7 +180,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
     @objc private func captureWindowAction() { takeWindow() }
     @objc private func captureOCRAction() { takeOCR() }
     @objc private func openHistoryAction() { HistoryWindow.shared.toggle() }
-    @objc private func checkForUpdatesAction() { updaterController.checkForUpdates(nil) }
+    @objc private func checkForUpdatesAction() { AppDelegate.updaterController.checkForUpdates(nil) }
 
     @objc func openSettings() {
         if let window = settingsWindow, window.isVisible {

@@ -39,7 +39,7 @@
 
         <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
           <a
-            href="https://github.com/jeremy-prt/orby/releases"
+            href="https://github.com/jeremy-prt/orby/releases/latest/download/Orby.dmg"
             target="_blank"
             class="px-7 py-3.5 bg-brand hover:bg-brand-dark text-white font-semibold rounded-full shadow-lg shadow-brand/20 hover:shadow-xl hover:shadow-brand/30 transition-all text-sm"
           >
