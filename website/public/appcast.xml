@@ -4,6 +4,33 @@
         <title>Orby Updates</title>
         <language>en</language>
         <item>
+            <title>Version 1.1.0</title>
+            <sparkle:version>2</sparkle:version>
+            <sparkle:shortVersionString>1.1.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.0</sparkle:minimumSystemVersion>
+            <description><![CDATA[
+                <h2>Orby 1.1.0</h2>
+                <ul>
+                    <li>Vectorial zoom: annotations stay sharp at all zoom levels</li>
+                    <li>Zoom towards cursor (Cmd+scroll, pinch)</li>
+                    <li>Dominant background color behind captures</li>
+                    <li>Corner radius on rectangle annotations</li>
+                    <li>WebP export format</li>
+                    <li>Selection handles always visible, even on small captures</li>
+                    <li>Handles clickable outside canvas bounds</li>
+                    <li>Window capture without shadow</li>
+                    <li>Editor refactored for better performance</li>
+                </ul>
+            ]]></description>
+            <pubDate>Sat, 22 Mar 2026 18:00:00 +0100</pubDate>
+            <enclosure
+                url="https://github.com/jeremy-prt/orby/releases/download/v1.1.0/Orby.dmg"
+                sparkle:edSignature="FZaWdkCU1BfCfT16NELSykaedh2zg1eJu/HXJ4TIjhDQJeeFDP0YueQj2wQc3CvPuQAwuSxFFvgMXxchfJ2yBQ=="
+                length="3087729"
+                type="application/octet-stream"
+            />
+        </item>
+        <item>
             <title>Version 1.0.0</title>
             <sparkle:version>1</sparkle:version>
             <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
