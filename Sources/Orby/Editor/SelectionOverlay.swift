@@ -69,7 +69,7 @@ struct SelectionOverlay: View {
 
             // Rotation handle
             let topCenter = CGPoint(x: r.midX, y: r.minY)
-            let rotHandle = CGPoint(x: r.midX, y: r.minY - 25 * zoomLevel)
+            let rotHandle = CGPoint(x: r.midX, y: r.minY - 25)
 
             var line = Path()
             line.move(to: topCenter)
