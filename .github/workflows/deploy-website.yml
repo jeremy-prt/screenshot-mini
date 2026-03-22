@@ -32,7 +32,7 @@ jobs:
       - name: Build site
         working-directory: website
         env:
-          NUXT_APP_BASE_URL: /orby/
+          NUXT_APP_BASE_URL: /
         run: npx nuxi generate
 
       - name: Upload artifact
