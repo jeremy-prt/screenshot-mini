@@ -2,7 +2,7 @@ import SwiftUI
 
 struct CaptureTabView: View {
     @AppStorage("previewPosition") private var position = "bottomLeft"
-    @AppStorage("dismissDelay") private var dismissDelay = 5.0
+    @AppStorage("dismissDelay") private var dismissDelay = 20.0
     @AppStorage("closeAfterAction") private var closeAfterAction = true
     @AppStorage("multiPreview") private var multiPreview = true
     @AppStorage("afterCaptureShowPreview") private var afterCaptureShowPreview = true

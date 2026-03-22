@@ -25,7 +25,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, ObservableObject {
         // Sparkle auto-updater
         updaterController = SPUStandardUpdaterController(startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
 
-        UserDefaults.standard.register(defaults: ["dismissDelay": 5.0, "playSound": true, "showMenuBarIcon": true, "appTheme": "system", "exportRetina": true])
+        UserDefaults.standard.register(defaults: ["dismissDelay": 20.0, "playSound": true, "showMenuBarIcon": true, "appTheme": "system", "exportRetina": true])
         applyTheme(UserDefaults.standard.string(forKey: "appTheme") ?? "system")
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 

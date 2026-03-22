@@ -35,7 +35,7 @@ class ThumbnailPanel {
 
     private var dismissDelay: TimeInterval {
         let val = UserDefaults.standard.double(forKey: "dismissDelay")
-        return val > 0 ? val : 5
+        return val > 0 ? val : 20
     }
 
     private var closeAfterAction: Bool {
