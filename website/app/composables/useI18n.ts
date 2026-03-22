@@ -12,10 +12,10 @@ const translations: Record<string, Record<Lang, string>> = {
   'hero.title1': { en: 'Capture your screen,', fr: 'Capturez votre écran,', es: 'Captura tu pantalla,', de: 'Erfassen Sie Ihren Bildschirm,' },
   'hero.title2': { en: 'beautifully.', fr: 'élégamment.', es: 'con estilo.', de: 'wunderbar.' },
   'hero.subtitle': {
-    en: 'A lightweight screenshot tool for macOS. Capture, annotate, add beautiful backgrounds and share, all from your menu bar.',
-    fr: 'Un outil de capture d\'écran léger pour macOS. Capturez, annotez, embellissez et partagez, le tout depuis votre barre de menus.',
-    es: 'Una herramienta ligera de capturas para macOS. Captura, anota, embellece y comparte, todo desde tu barra de menús.',
-    de: 'Ein leichtes Screenshot-Tool für macOS. Erfassen, kommentieren, fügen Sie wunderschöne Hintergründe hinzu und teilen Sie – alles von Ihrer Menüleiste.'
+    en: 'The free, open-source alternative to CleanShot X. Fast, lightweight, and designed for macOS.',
+    fr: 'L\'alternative gratuite et open source à CleanShot X. Rapide, légère, pensée pour macOS.',
+    es: 'La alternativa gratuita y open source a CleanShot X. Rápida, ligera, diseñada para macOS.',
+    de: 'Die kostenlose Open-Source-Alternative zu CleanShot X. Schnell, leicht, für macOS entwickelt.'
   },
   'hero.cta': { en: 'Download for macOS', fr: 'Télécharger pour macOS', es: 'Descargar para macOS', de: 'Für macOS herunterladen' },
   'hero.github': { en: 'View on GitHub', fr: 'Voir sur GitHub', es: 'Ver en GitHub', de: 'Auf GitHub ansehen' },

@@ -166,14 +166,16 @@ struct EditorView: View {
                     .keyboardShortcut("z", modifiers: [.command, .shift]).hidden()
                 Button("") { deleteSelectedAnnotations() }
                     .keyboardShortcut(.delete, modifiers: []).hidden()
-                Button("") { if editingTextId == nil { moveSelectedAnnotations(dx: 0, dy: -1) } }
-                    .keyboardShortcut(.upArrow, modifiers: []).hidden()
-                Button("") { if editingTextId == nil { moveSelectedAnnotations(dx: 0, dy: 1) } }
-                    .keyboardShortcut(.downArrow, modifiers: []).hidden()
-                Button("") { if editingTextId == nil { moveSelectedAnnotations(dx: -1, dy: 0) } }
-                    .keyboardShortcut(.leftArrow, modifiers: []).hidden()
-                Button("") { if editingTextId == nil { moveSelectedAnnotations(dx: 1, dy: 0) } }
-                    .keyboardShortcut(.rightArrow, modifiers: []).hidden()
+                if editingTextId == nil {
+                    Button("") { moveSelectedAnnotations(dx: 0, dy: -1) }
+                        .keyboardShortcut(.upArrow, modifiers: []).hidden()
+                    Button("") { moveSelectedAnnotations(dx: 0, dy: 1) }
+                        .keyboardShortcut(.downArrow, modifiers: []).hidden()
+                    Button("") { moveSelectedAnnotations(dx: -1, dy: 0) }
+                        .keyboardShortcut(.leftArrow, modifiers: []).hidden()
+                    Button("") { moveSelectedAnnotations(dx: 1, dy: 0) }
+                        .keyboardShortcut(.rightArrow, modifiers: []).hidden()
+                }
                 // Tool shortcuts
                 Button("") { selectTool("cursor") }.keyboardShortcut("v", modifiers: []).hidden()
                 Button("") { selectTool("crop") }.keyboardShortcut("c", modifiers: []).hidden()
