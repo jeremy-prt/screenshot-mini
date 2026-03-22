@@ -2,7 +2,7 @@ import SwiftUI
 import Sparkle
 
 struct AboutTabView: View {
-    private let en = L10n.lang == "en"
+    private let l = L10n.lang
     private let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
     private let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
 
@@ -33,9 +33,11 @@ struct AboutTabView: View {
             }
 
             // Description
-            Text(en
-                ? "A lightweight screenshot tool for macOS."
-                : "Un outil de capture d'écran léger pour macOS.")
+            Text(L10n.tr4(
+                "A lightweight screenshot tool for macOS.",
+                "Un outil de capture d'écran léger pour macOS.",
+                "Una herramienta ligera de capturas para macOS.",
+                "Ein leichtes Screenshot-Tool für macOS."))
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -45,7 +47,7 @@ struct AboutTabView: View {
             // Links + update
             VStack(spacing: 8) {
                 Link(destination: URL(string: "https://jeremy-prt.github.io/orby/")!) {
-                    Label(en ? "Website" : "Site web", systemImage: "globe")
+                    Label(L10n.tr4("Website", "Site web", "Sitio web", "Webseite"), systemImage: "globe")
                         .font(.system(size: 12))
                 }
                 .foregroundStyle(brandPurple)
@@ -60,7 +62,7 @@ struct AboutTabView: View {
             Button {
                 SPUStandardUpdaterController(startingUpdater: false, updaterDelegate: nil, userDriverDelegate: nil).checkForUpdates(nil)
             } label: {
-                Label(en ? "Check for Updates…" : "Vérifier les mises à jour…",
+                Label(L10n.tr4("Check for Updates…", "Vérifier les mises à jour…", "Buscar actualizaciones…", "Nach Updates suchen…"),
                       systemImage: "arrow.triangle.2.circlepath")
                     .font(.system(size: 12))
             }

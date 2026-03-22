@@ -9,11 +9,11 @@ struct GeneralTabView: View {
 
     var body: some View {
         Form {
-            Section(L10n.lang == "en" ? "Appearance" : "Apparence") {
-                Picker(L10n.lang == "en" ? "Theme" : "Thème", selection: $appTheme) {
-                    Text(L10n.lang == "en" ? "System" : "Système").tag("system")
-                    Text(L10n.lang == "en" ? "Light" : "Clair").tag("light")
-                    Text(L10n.lang == "en" ? "Dark" : "Sombre").tag("dark")
+            Section(L10n.tr4("Appearance", "Apparence", "Apariencia", "Erscheinungsbild")) {
+                Picker(L10n.tr4("Theme", "Thème", "Tema", "Design"), selection: $appTheme) {
+                    Text(L10n.tr4("System", "Système", "Sistema", "System")).tag("system")
+                    Text(L10n.tr4("Light", "Clair", "Claro", "Hell")).tag("light")
+                    Text(L10n.tr4("Dark", "Sombre", "Oscuro", "Dunkel")).tag("dark")
                 }
                 .pickerStyle(.segmented)
                 .onChange(of: appTheme) { _, newValue in
@@ -21,15 +21,17 @@ struct GeneralTabView: View {
                 }
             }
 
-            Section(L10n.lang == "en" ? "Menu bar" : "Barre des menus") {
+            Section(L10n.tr4("Menu bar", "Barre des menus", "Barra de menús", "Menüleiste")) {
                 Toggle(
-                    L10n.lang == "en" ? "Show icon in menu bar" : "Afficher l'icône dans la barre des menus",
+                    L10n.tr4("Show icon in menu bar", "Afficher l'icône dans la barre des menus", "Mostrar icono en la barra de menús", "Symbol in der Menüleiste anzeigen"),
                     isOn: $showMenuBarIcon
                 )
                 if !showMenuBarIcon {
-                    Text(L10n.lang == "en"
-                         ? "Use your keyboard shortcuts to capture. Right-click the app in the Dock or relaunch to access settings."
-                         : "Utilisez vos raccourcis clavier pour capturer. Clic droit sur l'app dans le Dock ou relancez pour accéder aux réglages.")
+                    Text(L10n.tr4(
+                         "Use your keyboard shortcuts to capture. Right-click the app in the Dock or relaunch to access settings.",
+                         "Utilisez vos raccourcis clavier pour capturer. Clic droit sur l'app dans le Dock ou relancez pour accéder aux réglages.",
+                         "Usa tus atajos de teclado para capturar. Haz clic derecho en la app en el Dock o reinicia para acceder a los ajustes.",
+                         "Verwenden Sie Ihre Tastaturkürzel zum Erfassen. Klicken Sie mit der rechten Maustaste auf die App im Dock oder starten Sie neu, um auf Einstellungen zuzugreifen."))
                         .font(.caption2)
                         .foregroundStyle(.orange)
                 }
@@ -39,27 +41,31 @@ struct GeneralTabView: View {
                 LaunchAtLoginToggle()
             }
 
-            Section(L10n.lang == "en" ? "Sound" : "Son") {
+            Section(L10n.tr4("Sound", "Son", "Sonido", "Ton")) {
                 Toggle(
-                    L10n.lang == "en" ? "Play sound on capture" : "Jouer un son à la capture",
+                    L10n.tr4("Play sound on capture", "Jouer un son à la capture", "Reproducir sonido al capturar", "Ton bei Aufnahme abspielen"),
                     isOn: $playSound
                 )
             }
 
             Section(L10n.language) {
                 Picker(L10n.interfaceLanguage, selection: $appLanguage) {
-                    Text("French").tag("fr")
+                    Text("Français").tag("fr")
                     Text("English").tag("en")
+                    Text("Español").tag("es")
+                    Text("Deutsch").tag("de")
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(.menu)
             }
 
-            Section(L10n.lang == "en" ? "Text recognition (OCR)" : "Reconnaissance de texte (OCR)") {
-                Picker(L10n.lang == "en" ? "Language" : "Langue", selection: $ocrLanguage) {
-                    Text("French").tag("fr")
+            Section(L10n.tr4("Text recognition (OCR)", "Reconnaissance de texte (OCR)", "Reconocimiento de texto (OCR)", "Texterkennung (OCR)")) {
+                Picker(L10n.tr4("Language", "Langue", "Idioma", "Sprache"), selection: $ocrLanguage) {
+                    Text("Français").tag("fr")
                     Text("English").tag("en")
+                    Text("Español").tag("es")
+                    Text("Deutsch").tag("de")
                 }
-                .pickerStyle(.segmented)
+                .pickerStyle(.menu)
             }
         }
         .formStyle(.grouped)

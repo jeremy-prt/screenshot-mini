@@ -71,7 +71,7 @@ class ThumbnailPanel {
                 self?.openEditor(image: image, id: id)
             },
             onDismiss: { [weak self] in
-                self?.dismissPanel(id: id)
+                self?.dismissPanel(id: id, force: true)
             },
             onPin: { [weak self] pinned in
                 self?.setPinned(pinned, id: id)
@@ -172,6 +172,8 @@ class ThumbnailPanel {
     private func handleScrollEvent(_ event: NSEvent) {
         guard let eventWindow = event.window else { return }
         guard let idx = panels.firstIndex(where: { $0.panel === eventWindow }) else { return }
+        // Never dismiss pinned panels by swipe
+        if panels[idx].isPinned { return }
 
         if event.phase == .began {
             panels[idx].scrollAccumX = 0
@@ -331,7 +333,7 @@ class ThumbnailPanel {
         panels[idx].timer?.invalidate()
         panels[idx].timer = nil
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) { [weak self] in
-            self?.dismissPanel(id: id)
+            self?.dismissPanel(id: id, force: true)
         }
     }
 
@@ -356,9 +358,11 @@ class ThumbnailPanel {
         }
     }
 
-    func dismissPanel(id: UUID) {
+    func dismissPanel(id: UUID, force: Bool = false) {
         guard let idx = panels.firstIndex(where: { $0.id == id }) else { return }
         let entry = panels[idx]
+        // Don't auto-dismiss pinned panels unless forced (close button)
+        if entry.isPinned && !force { return }
         entry.timer?.invalidate()
 
         NotificationCenter.default.removeObserver(self, name: NSWindow.didMoveNotification, object: entry.panel)
@@ -434,7 +438,7 @@ class ThumbnailPanel {
     // MARK: - Editor
 
     private func openEditor(image: NSImage, id: UUID) {
-        dismissPanel(id: id)
+        dismissPanel(id: id, force: true)
         EditorWindow.shared.open(image: image, savePath: savePath)
     }
 

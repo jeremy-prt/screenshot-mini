@@ -17,8 +17,10 @@ struct ThumbnailView: View {
     @State private var hoveredButton: String?
     @State private var visibleTooltip: String?
     @State private var tooltipTimer: Timer?
+    @Environment(\.colorScheme) private var colorScheme
 
-    private var showOverlay: Bool { isHovered || isPinned }
+    private var isDark: Bool { colorScheme == .dark }
+    private var showOverlay: Bool { isHovered }
 
     var body: some View {
         ZStack {
@@ -165,9 +167,9 @@ struct ThumbnailView: View {
         Button(action: action) {
             Text(label)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.black.opacity(0.8))
+                .foregroundStyle(brandPurple)
                 .frame(width: 80, height: 26)
-                .background(Capsule().fill(.white.opacity(0.85)))
+                .background(Capsule().fill(isDark ? Color.black.opacity(0.75) : Color.white.opacity(0.85)))
         }
         .buttonStyle(.plain)
         .onHover { h in hoveredButton = h ? buttonId : nil }
@@ -178,9 +180,9 @@ struct ThumbnailView: View {
             Image(systemName: icon)
                 .font(.system(size: 11, weight: .bold))
                 .rotationEffect(.degrees(rotation))
-                .foregroundStyle(highlighted ? .yellow : .black.opacity(0.7))
+                .foregroundStyle(highlighted ? .yellow : brandPurple)
                 .frame(width: 24, height: 24)
-                .background(Circle().fill(.white.opacity(0.85)))
+                .background(Circle().fill(isDark ? Color.black.opacity(0.75) : Color.white.opacity(0.85)))
         }
         .buttonStyle(.plain)
         .onHover { h in hoveredButton = h ? buttonId : nil }

@@ -9,12 +9,11 @@ enum ScreenPosition: String, CaseIterable {
     case topRight = "topRight"
 
     var label: String {
-        let en = L10n.lang == "en"
         switch self {
-        case .bottomLeft: return en ? "Bottom left" : "Bas gauche"
-        case .bottomRight: return en ? "Bottom right" : "Bas droite"
-        case .topLeft: return en ? "Top left" : "Haut gauche"
-        case .topRight: return en ? "Top right" : "Haut droite"
+        case .bottomLeft: return L10n.tr4("Bottom left", "Bas gauche", "Abajo izquierda", "Unten links")
+        case .bottomRight: return L10n.tr4("Bottom right", "Bas droite", "Abajo derecha", "Unten rechts")
+        case .topLeft: return L10n.tr4("Top left", "Haut gauche", "Arriba izquierda", "Oben links")
+        case .topRight: return L10n.tr4("Top right", "Haut droite", "Arriba derecha", "Oben rechts")
         }
     }
 
@@ -42,11 +41,10 @@ enum ImageFormat: String, CaseIterable {
     }
 
     var description: String {
-        let en = L10n.lang == "en"
         switch self {
-        case .png: return en ? "Lossless, transparent" : "Sans perte, transparent"
-        case .jpeg: return en ? "Compressed, lighter" : "Compressé, plus léger"
-        case .tiff: return en ? "Lossless, high quality" : "Sans perte, haute qualité"
+        case .png: return L10n.tr4("Lossless, transparent", "Sans perte, transparent", "Sin pérdida, transparente", "Verlustfrei, transparent")
+        case .jpeg: return L10n.tr4("Compressed, lighter", "Compressé, plus léger", "Comprimido, más ligero", "Komprimiert, leichter")
+        case .tiff: return L10n.tr4("Lossless, high quality", "Sans perte, haute qualité", "Sin pérdida, alta calidad", "Verlustfrei, hohe Qualität")
         }
     }
 }
@@ -72,7 +70,7 @@ enum SettingsTab: String, CaseIterable {
         case .raccourcis: L10n.shortcut
         case .capture: L10n.settingsCapture
         case .sauvegarde: L10n.settingsSave
-        case .about: L10n.lang == "en" ? "About" : "À propos"
+        case .about: L10n.tr4("About", "À propos", "Acerca de", "Über")
         }
     }
 }

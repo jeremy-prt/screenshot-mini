@@ -3,8 +3,8 @@ import AppKit
 
 // MARK: - Brand colors
 
-let brandPurple = Color(red: 0x9F / 255.0, green: 0x01 / 255.0, blue: 0xA0 / 255.0)
-let brandPurpleNS = NSColor(red: 0x9F / 255.0, green: 0x01 / 255.0, blue: 0xA0 / 255.0, alpha: 1)
+let brandPurple = Color(red: 0x96 / 255.0, green: 0x44 / 255.0, blue: 0x88 / 255.0)
+let brandPurpleNS = NSColor(red: 0x96 / 255.0, green: 0x44 / 255.0, blue: 0x88 / 255.0, alpha: 1)
 
 // MARK: - Theme
 

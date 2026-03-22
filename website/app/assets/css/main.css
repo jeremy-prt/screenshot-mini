@@ -1,0 +1,62 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+html {
+  scroll-behavior: smooth;
+}
+
+@theme {
+  --font-sans: "Inter Variable", system-ui, sans-serif;
+  --color-brand: #964488;
+  --color-brand-dark: #7A3770;
+  --color-brand-light: #F3E4EF;
+  --color-brand-subtle: #FAF2F8;
+  --color-brand-accent: #C25DB0;
+  --color-brand-overlay: #E2B6D5;
+}
+
+/* Scroll animations */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-in {
+  animation: fadeSlideUp 0.7s ease-out forwards;
+}
+
+.scroll-hidden {
+  opacity: 0;
+}
+
+/* Stagger delays */
+.delay-1 { animation-delay: 0.1s; }
+.delay-2 { animation-delay: 0.2s; }
+.delay-3 { animation-delay: 0.3s; }
+.delay-4 { animation-delay: 0.4s; }
+
+/* Float animation for hero decorative elements */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-16px) rotate(2deg); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float 8s ease-in-out infinite;
+}
+
+/* Gradient shift */
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradientShift 8s ease infinite;
+}

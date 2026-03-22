@@ -79,7 +79,7 @@ if [ -f "$DMG_OUTPUT" ]; then
         echo "Sparkle EdDSA signature:"
         ./Frameworks/sign_update "$DMG_OUTPUT"
         echo ""
-        echo "Copy the sparkle:edSignature and length into docs/appcast.xml"
+        echo "Copy the sparkle:edSignature and length into website/public/appcast.xml"
     fi
 else
     echo "ERROR: DMG creation failed"
